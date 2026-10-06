@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://sirh-backend-sgdu.onrender.com'
+  apiUrl: 'https://sirh-production-f9dd.up.railway.app'
 };
