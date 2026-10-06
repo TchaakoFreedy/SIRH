@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { RoleService } from '../../services/role.service';
 import { PermissionService } from '../../../permissions/services/permission.service';
 import { Permission } from '../../../permissions/models/permission.model';
-import { ToastrService } from 'ngx-toastr';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { Location } from '@angular/common';
 import { finalize } from 'rxjs';
 
@@ -37,7 +37,7 @@ export class RoleFormComponent implements OnInit {
     private permissionService: PermissionService,
     private route: ActivatedRoute,
     private router: Router,
-    private toastr: ToastrService,
+    private toastr: NotificationService,
     private location: Location,
     private cdr: ChangeDetectorRef
   ) {

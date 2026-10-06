@@ -1,3 +1,4 @@
+
 {
   "name": "sirh-frontend",
   "version": "0.0.0",
@@ -11,16 +12,16 @@
   "private": true,
   "packageManager": "npm@11.13.0",
   "dependencies": {
-    "@angular/animations": "^22.1.0",
-    "@angular/cdk": "^22.1.2",
-    "@angular/common": "^22.0.0",
-    "@angular/compiler": "^22.0.0",
-    "@angular/core": "^22.0.0",
-    "@angular/forms": "^22.0.0",
-    "@angular/material": "^22.1.0",
-    "@angular/platform-browser": "^22.0.0",
-    "@angular/router": "^22.0.0",
-    "@fortawesome/angular-fontawesome": "^0.14.0",
+    "@angular/animations": "22.1.0",
+    "@angular/cdk": "22.1.0",
+    "@angular/common": "22.1.0",
+    "@angular/compiler": "22.1.0",
+    "@angular/core": "22.1.0",
+    "@angular/forms": "22.1.0",
+    "@angular/localize": "22.1.0",
+    "@angular/material": "22.1.0",
+    "@angular/platform-browser": "22.1.0",
+    "@angular/router": "22.1.0",
     "@fortawesome/fontawesome-free": "^7.3.0",
     "@fortawesome/fontawesome-svg-core": "^6.5.0",
     "@fortawesome/free-solid-svg-icons": "^6.5.0",
@@ -30,7 +31,7 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "ng2-charts": "^5.0.4",
-    "ngx-toastr": "^20.0.5",
+    "ngx-sonner": "3.1.0",
     "pdfmake": "^0.3.11",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
@@ -38,9 +39,9 @@
     "zone.js": "^0.16.2"
   },
   "devDependencies": {
-    "@angular/build": "^22.0.3",
-    "@angular/cli": "^22.0.3",
-    "@angular/compiler-cli": "^22.0.0",
+    "@angular/build": "22.1.6",
+    "@angular/cli": "22.1.6",
+    "@angular/compiler-cli": "22.1.0",
     "@types/pdfmake": "^0.3.3",
     "@types/xlsx": "^0.0.35",
     "esbuild": "^0.28.1",
@@ -50,3 +51,4 @@
     "vitest": "^4.0.8"
   }
 }
+

@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { PermissionService } from '../../services/permission.service';
 import { Permission } from '../../models/permission.model';
-import { ToastrService } from 'ngx-toastr';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { Location } from '@angular/common';
 import { finalize } from 'rxjs';
 
@@ -25,7 +25,7 @@ export class PermissionDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private permissionService: PermissionService,
-    private toastr: ToastrService,
+    private toastr: NotificationService,
     private location: Location,
     private cdr: ChangeDetectorRef
   ) {}

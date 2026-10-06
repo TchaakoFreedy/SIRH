@@ -8,7 +8,7 @@ import { RoleService } from '../../services/role.service';
 import { PermissionService } from '../../../permissions/services/permission.service';
 import { Role, RolePermissionsUpdateRequest } from '../../models/role.model';
 import { Permission } from '../../../permissions/models/permission.model';
-import { ToastrService } from 'ngx-toastr';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { Location } from '@angular/common';
 import { Subject, finalize } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -34,7 +34,7 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
     private router: Router,
     private roleService: RoleService,
     private permissionService: PermissionService,
-    private toastr: ToastrService,
+    private toastr: NotificationService,
     private location: Location,
     private cdr: ChangeDetectorRef
   ) {}

@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RoleService } from '../../services/role.service';
 import { Role } from '../../models/role.model';
-import { ToastrService } from 'ngx-toastr';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { Subject, finalize } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -26,7 +26,7 @@ export class RoleListComponent implements OnInit, OnDestroy {
   constructor(
     private roleService: RoleService,
     private router: Router,
-    private toastr: ToastrService,
+    private toastr: NotificationService,
     private cdr: ChangeDetectorRef
   ) {}
 

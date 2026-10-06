@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { UserPermissionService } from '../../services/user-permission.service';
 import { UserPermissions } from '../../models/user-permissions.model';
 import { UserService, User } from '../../../../core/services/user.service';
-import { ToastrService } from 'ngx-toastr';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { Location } from '@angular/common';
 import { Subject, finalize } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -46,7 +46,7 @@ export class UserPermissionsComponent implements OnInit, OnDestroy {
     private router: Router,
     private userPermissionService: UserPermissionService,
     private userService: UserService,
-    private toastr: ToastrService,
+    private toastr: NotificationService,
     private location: Location,
     private cdr: ChangeDetectorRef
   ) {}

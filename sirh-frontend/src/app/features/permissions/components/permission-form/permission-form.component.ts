@@ -6,7 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PermissionService } from '../../services/permission.service';
 import { Permission } from '../../models/permission.model';
-import { ToastrService } from 'ngx-toastr';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { Location } from '@angular/common';
 
 @Component({
@@ -46,7 +46,7 @@ export class PermissionFormComponent implements OnInit {
     private permissionService: PermissionService,
     private route: ActivatedRoute,
     private router: Router,
-    private toastr: ToastrService,
+    private toastr: NotificationService,
     private location: Location
   ) {
     this.permissionForm = this.fb.group({

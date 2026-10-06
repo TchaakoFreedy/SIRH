@@ -1,6 +1,7 @@
 // src/app/core/services/notification.service.ts
 
 import { Injectable } from '@angular/core';
+import { toast } from 'ngx-sonner';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject, Subject, interval, switchMap, Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -138,16 +139,19 @@ export class NotificationService {
   // TOAST
   // =============================================
 
-  private showToast(type: 'success' | 'error' | 'warning' | 'info', message: string): void {
+  private showToast(type: 'success' | 'error' | 'warning' | 'info', message: string, title?: string): void {
     const id = ++this.toastIdCounter;
     this.toastSubject.next({ id, type, message });
     setTimeout(() => this.remove(id), 5000);
+    const content = title || message;
+    const options = title ? { description: message } : undefined;
+    toast[type](content, options);
   }
 
-  success(message: string): void { this.showToast('success', message); }
-  error(message: string): void { this.showToast('error', message); }
-  warning(message: string): void { this.showToast('warning', message); }
-  info(message: string): void { this.showToast('info', message); }
+  success(message: string, title?: string): void { this.showToast('success', message, title); }
+  error(message: string, title?: string): void { this.showToast('error', message, title); }
+  warning(message: string, title?: string): void { this.showToast('warning', message, title); }
+  info(message: string, title?: string): void { this.showToast('info', message, title); }
 
   remove(id: number): void {
     this.toastSubject.next({ id, type: 'info', message: '' });

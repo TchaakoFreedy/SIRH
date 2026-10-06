@@ -8,7 +8,7 @@ import { UserPermissionService } from '../../services/user-permission.service';
 import { PermissionService } from '../../../permissions/services/permission.service';
 import { UserPermissions, UserPermissionsUpdateRequest } from '../../models/user-permissions.model';
 import { Permission } from '../../../permissions/models/permission.model';
-import { ToastrService } from 'ngx-toastr';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { Location } from '@angular/common';
 import { Subject, finalize } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -37,7 +37,7 @@ export class UserPermissionsEditComponent implements OnInit, OnDestroy {
     private router: Router,
     private userPermissionService: UserPermissionService,
     private permissionService: PermissionService,
-    private toastr: ToastrService,
+    private toastr: NotificationService,
     private location: Location,
     private cdr: ChangeDetectorRef
   ) {}

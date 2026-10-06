@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PermissionService } from '../../services/permission.service';
 import { Permission } from '../../models/permission.model';
-import { ToastrService } from 'ngx-toastr';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { Subject, finalize } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -35,7 +35,7 @@ export class PermissionListComponent implements OnInit, OnDestroy {
   constructor(
     private permissionService: PermissionService,
     private router: Router,
-    private toastr: ToastrService,
+    private toastr: NotificationService,
     private cdr: ChangeDetectorRef
   ) {}
 
