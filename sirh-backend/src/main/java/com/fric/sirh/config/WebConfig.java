@@ -1,10 +1,18 @@
 package com.fric.sirh.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * Configuration MVC uniquement pour les ressources statiques.
+ *
+ * ⚠️ IMPORTANT : NE PAS définir addCorsMappings ici.
+ * Le CORS est géré EXCLUSIVEMENT par SecurityConfig.corsConfigurationSource().
+ *
+ * Avoir deux configs CORS (WebMvcConfigurer + Spring Security) provoque l'erreur :
+ *   "When allowCredentials is true, allowedOrigins cannot contain the special value '*'"
+ */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -15,17 +23,5 @@ public class WebConfig implements WebMvcConfigurer {
                 .setCachePeriod(0);
     }
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins(
-                    "https://sirh-ytal.vercel.app",
-                    "http://localhost:4200"
-                )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-                .allowedHeaders("*")
-                .exposedHeaders("Authorization")
-                .allowCredentials(true)
-                .maxAge(3600);
-    }
+    // ❌ addCorsMappings SUPPRIMÉ volontairement — voir commentaire ci-dessus.
 }

@@ -31,7 +31,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // CORS géré UNIQUEMENT ici, via le bean corsConfigurationSource()
+                // ✅ CORS géré UNIQUEMENT ici, via le bean corsConfigurationSource()
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -60,12 +60,18 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * ✅ SEUL endroit où le CORS est configuré pour toute l'application.
+     *
+     * Règles Spring importantes :
+     * - setAllowedOriginPatterns est COMPATIBLE avec setAllowCredentials(true)
+     * - setAllowedOrigins("*") est INCOMPATIBLE avec setAllowCredentials(true)
+     * - Avec un token Bearer dans le header Authorization, allowCredentials n'est PAS nécessaire.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // ⚠️ CORRECTION : on utilise setAllowedOriginPatterns (compatible avec allowCredentials=true)
-        // au lieu de setAllowedOrigins("*") qui était interdit.
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:4200",
                 "http://localhost:3000",
@@ -80,7 +86,7 @@ public class SecurityConfig {
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"
         ));
 
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(List.of("*"));
 
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
@@ -91,9 +97,7 @@ public class SecurityConfig {
                 "X-Page-Count"
         ));
 
-        // Avec Authorization: Bearer, allowCredentials(true) n'est PAS nécessaire.
-        // On le laisse à true uniquement si tu utilises des cookies.
-        // Pour éviter tout conflit, on le passe à false ici.
+        // ✅ false : on utilise Authorization: Bearer, pas de cookies.
         configuration.setAllowCredentials(false);
         configuration.setMaxAge(3600L);
 
