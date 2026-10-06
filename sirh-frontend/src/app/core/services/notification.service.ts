@@ -15,7 +15,7 @@ export interface ToastMessage {
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private readonly apiUrl = `${environment.apiUrl}/notifications`;
+  private readonly apiUrl = `${environment.apiUrl}/api/notifications`;
 
   // Compteur de non lues
   private unreadCountSubject = new BehaviorSubject<number>(0);
@@ -193,39 +193,31 @@ export class NotificationService {
 
   getEventLabel(event: string): string {
     const labels: Record<string, string> = {
-      // Employés
       'EMPLOYEE_CREATED': 'Creation employe',
       'EMPLOYEE_UPDATED': 'Modification employe',
       'EMPLOYEE_SUSPENDED': 'Suspension employe',
       'EMPLOYEE_REACTIVATED': 'Reactivation employe',
-      // Documents
       'DOCUMENT_UPLOADED': 'Document telecharge',
       'PAYSLIP_UPLOADED': 'Bulletin de paie telecharge',
-      // Entreprises
       'COMPANY_CREATED': 'Creation entreprise',
       'COMPANY_UPDATED': 'Modification entreprise',
       'COMPANY_DELETED': 'Suppression entreprise',
-      // Départements
       'DEPARTMENT_CREATED': 'Creation departement',
       'DEPARTMENT_UPDATED': 'Modification departement',
       'DEPARTMENT_DELETED': 'Suppression departement',
-      // Postes
       'POSITION_CREATED': 'Creation poste',
       'POSITION_UPDATED': 'Modification poste',
       'POSITION_DELETED': 'Suppression poste',
-      // Congés
       'LEAVE_REQUESTED': 'Demande de conge',
       'LEAVE_APPROVED': 'Conge approuve',
       'LEAVE_REJECTED': 'Conge refuse',
       'LEAVE_CANCELLED': 'Conge annule',
       'LEAVE_BALANCE_GLOBAL_UPDATED': 'Mise a jour globale des soldes',
       'LEAVE_BALANCE_INDIVIDUAL_UPDATED': 'Mise a jour individuelle du solde',
-      // Rôles et permissions
       'ROLE_CREATED': 'Creation role',
       'ROLE_UPDATED': 'Modification role',
       'ROLE_DELETED': 'Suppression role',
       'PERMISSION_UPDATED': 'Mise a jour permissions',
-      // Contrats (NOUVEAU)
       'CONTRACT_CREATED': 'Creation contrat',
       'CONTRACT_UPDATED': 'Modification contrat',
       'CONTRACT_RENEWED': 'Renouvellement contrat',
@@ -236,7 +228,6 @@ export class NotificationService {
       'CONTRACT_EXPIRING_TWO_WEEKS': 'Contrat expire dans 2 semaines',
       'CONTRACT_EXPIRING_DAILY': 'Rappel quotidien expiration',
       'CONTRACT_EXPIRED_TODAY': 'Contrat expire aujourd\'hui',
-      // Discipline (NOUVEAU)
       'DISCIPLINE_EXPLANATION_CREATED': 'Demande d\'explication creee',
       'DISCIPLINE_EXPLANATION_RESPONDED': 'Reponse a demande d\'explication',
       'DISCIPLINE_EXPLANATION_VALIDATED': 'Demande d\'explication validee',
@@ -244,14 +235,12 @@ export class NotificationService {
       'DISCIPLINE_SANCTION_CREATED': 'Sanction creee',
       'DISCIPLINE_SANCTION_LIFTED': 'Sanction levee',
       'DISCIPLINE_SANCTION_UPDATED': 'Sanction modifiee',
-      // Performance (NOUVEAU)
       'PERFORMANCE_EVALUATION_CREATED': 'Evaluation de performance creee',
       'PERFORMANCE_EVALUATION_UPDATED': 'Evaluation de performance modifiee',
       'PERFORMANCE_EVALUATION_DELETED': 'Evaluation de performance supprimee',
       'PERFORMANCE_CRITERE_CREATED': 'Critere de performance cree',
       'PERFORMANCE_CRITERE_UPDATED': 'Critere de performance modifie',
       'PERFORMANCE_CRITERE_DELETED': 'Critere de performance supprime',
-      // Système
       'SYSTEM': 'Systeme'
     };
     return labels[event] || event;
