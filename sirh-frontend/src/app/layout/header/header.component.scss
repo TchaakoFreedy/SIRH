@@ -1,0 +1,1235 @@
+// ===== Variables =====
+$turquoise: #0d9488;
+$turquoise-light: #ccfbf1;
+$turquoise-dark: #0f766e;
+$white: #ffffff;
+$border: #e5e7eb;
+$shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+$text-primary: #1f2937;
+$text-secondary: #6b7280;
+$bg-light: #f9fafb;
+$danger: #ef4444;
+$success: #22c55e;
+$warning: #f59e0b;
+$info: #3b82f6;
+
+// ===== Header =====
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 72px;
+
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+
+  border-bottom: 1px solid rgba($border, 0.5);
+
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 4px 16px rgba(0, 0, 0, 0.04);
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 24px;
+  gap: 16px;
+
+  z-index: 1000;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    sans-serif;
+
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      0 8px 24px rgba(0, 0, 0, 0.06);
+  }
+}
+
+// ===== Brand / Logo =====
+.header-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  width: 100px;
+  height: 100px;
+
+  padding: 3px;
+
+  cursor: pointer;
+  text-decoration: none;
+
+  border-radius: 14px;
+
+  position: relative;
+  z-index: 2;
+
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover {
+    background: rgba($turquoise, 0.05);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $turquoise;
+    outline-offset: 2px;
+  }
+
+  &:hover .logo-icon {
+    transform: scale(1.04);
+  }
+}
+
+.logo-icon {
+  width: 400px;
+  height: 70px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  position: relative;
+
+  border-radius: 12px;
+
+  background: rgba($white, 0.98);
+
+  overflow: hidden;
+
+
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  .logo-img {
+    width: 210px;
+    height: 210px;
+    margin-left: 100px;
+    display: block;
+
+    object-fit: contain;
+
+    padding: 3px;
+
+    transition: transform 0.2s ease;
+  }
+
+  .logo-fallback {
+    width: 34px;
+    height: 34px;
+
+    font-size: 34px;
+
+    color: $turquoise;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// ===== Séparateur principal =====
+.header-divider {
+  width: 1px;
+  height: 32px;
+
+  flex-shrink: 0;
+
+  background:
+    linear-gradient(
+      to bottom,
+      transparent,
+      $border,
+      transparent
+    );
+
+  margin: 0 4px;
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
+}
+
+// ===== Bouton hamburger =====
+.menu-btn {
+  background: none;
+  border: none;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 40px;
+  height: 40px;
+
+  border-radius: 8px;
+
+  transition: background 0.2s ease;
+
+  color: $turquoise;
+
+  &:hover {
+    background: rgba($turquoise, 0.08);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $turquoise;
+    outline-offset: 2px;
+  }
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+}
+
+// ===== Recherche =====
+.header-search-wrapper {
+  flex: 1;
+
+  max-width: 520px;
+
+  display: flex;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    max-width: 280px;
+  }
+
+  @media (max-width: 640px) {
+    max-width: 160px;
+  }
+}
+
+.header-search {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  width: 100%;
+
+  background: $bg-light;
+
+  border: 1.5px solid $border;
+
+  border-radius: 12px;
+
+  padding: 8px 14px;
+
+  transition:
+    all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  position: relative;
+
+  &:focus-within {
+    border-color: $turquoise;
+
+    background: $white;
+
+    box-shadow:
+      0 0 0 4px rgba($turquoise, 0.08),
+      $shadow;
+  }
+
+  &.focused {
+    border-color: $turquoise;
+    background: $white;
+  }
+
+  .search-icon {
+    color: $text-secondary;
+
+    font-size: 20px;
+
+    width: 20px;
+    height: 20px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    opacity: 0.6;
+
+    svg {
+      width: 20px;
+      height: 20px;
+
+      fill: currentColor;
+    }
+  }
+
+  .search-input {
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    font-size: 14px;
+
+    color: $text-primary;
+
+    width: 100%;
+
+    padding: 4px 0;
+
+    font-family: inherit;
+
+    &::placeholder {
+      color: #9ca3af;
+      font-weight: 400;
+    }
+  }
+
+  .search-shortcut {
+    display: flex;
+    align-items: center;
+
+    gap: 2px;
+
+    flex-shrink: 0;
+
+    color: $text-secondary;
+
+    font-size: 11px;
+
+    opacity: 0.5;
+
+    kbd {
+      background: $bg-light;
+
+      border: 1px solid $border;
+
+      border-radius: 4px;
+
+      padding: 1px 6px;
+
+      font-size: 10px;
+
+      font-weight: 600;
+
+      color: $text-secondary;
+
+      font-family: inherit;
+    }
+
+    @media (max-width: 640px) {
+      display: none;
+    }
+  }
+}
+
+.search-clear {
+  background: none;
+  border: none;
+
+  cursor: pointer;
+
+  padding: 4px;
+
+  border-radius: 6px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: $text-secondary;
+
+  transition: all 0.15s ease;
+
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: $text-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $turquoise;
+    outline-offset: 1px;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+
+    fill: currentColor;
+  }
+}
+
+// ===== Espaceur =====
+.spacer {
+  flex: 1;
+}
+
+// ===== Actions =====
+.header-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+
+  flex-shrink: 0;
+}
+
+// ===== Groupes d'actions =====
+.action-group {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  flex-shrink: 0;
+}
+
+// ===== Boutons d'icônes =====
+.icon-btn {
+  background: none;
+  border: none;
+
+  cursor: pointer;
+
+  width: 40px;
+  height: 40px;
+
+  border-radius: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: $text-secondary;
+
+  transition: all 0.15s ease;
+
+  position: relative;
+
+  flex-shrink: 0;
+
+  svg {
+    width: 22px;
+    height: 22px;
+
+    fill: currentColor;
+
+    transition: fill 0.15s ease;
+  }
+
+  &:hover {
+    background: $bg-light;
+    color: $turquoise;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $turquoise;
+    outline-offset: 2px;
+  }
+
+  &.active {
+    background: rgba($turquoise, 0.1);
+    color: $turquoise;
+  }
+
+  &.help-btn:hover {
+    color: $info;
+    background: rgba($info, 0.08);
+  }
+}
+
+// ===== Séparateur actions =====
+.divider {
+  width: 1px;
+  height: 28px;
+
+  background: $border;
+
+  margin: 0 4px;
+}
+
+// ===== Notifications =====
+.notif-btn {
+  position: relative;
+
+  .notif-badge {
+    position: absolute;
+
+    top: 2px;
+    right: 2px;
+
+    background: $danger;
+
+    color: $white;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    min-width: 18px;
+    height: 18px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 2px solid $white;
+
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.1);
+
+    padding: 0 4px;
+  }
+}
+
+.notif-dropdown {
+  position: absolute;
+
+  top: calc(100% + 8px);
+  right: 0;
+
+  width: 380px;
+
+  background: $white;
+
+  border: 1px solid $border;
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.12);
+
+  z-index: 1001;
+
+  overflow: hidden;
+
+  animation: slideDown 0.2s ease;
+
+  @media (max-width: 640px) {
+    width: 320px;
+    right: -60px;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 16px 20px;
+
+  border-bottom: 1px solid $border;
+
+  background: $bg-light;
+
+  .notif-title {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    margin: 0;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    color: $text-primary;
+
+    svg {
+      width: 20px;
+      height: 20px;
+
+      fill: $turquoise;
+    }
+  }
+
+  .notif-header-actions {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+  }
+
+  .mark-all-btn {
+    background: none;
+    border: none;
+
+    cursor: pointer;
+
+    font-size: 12px;
+
+    color: $turquoise;
+
+    font-weight: 600;
+
+    padding: 4px 10px;
+
+    border-radius: 6px;
+
+    transition: all 0.15s ease;
+
+    display: flex;
+    align-items: center;
+
+    gap: 4px;
+
+    &:hover {
+      background: rgba($turquoise, 0.1);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $turquoise;
+      outline-offset: 1px;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+
+      fill: currentColor;
+    }
+  }
+
+  .notif-close-btn {
+    background: none;
+    border: none;
+
+    cursor: pointer;
+
+    width: 32px;
+    height: 32px;
+
+    color: $text-secondary;
+
+    padding: 0;
+
+    border-radius: 6px;
+
+    transition: all 0.15s ease;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: $text-primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $turquoise;
+      outline-offset: 1px;
+    }
+
+    mat-icon {
+      width: 18px;
+      height: 18px;
+
+      font-size: 18px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+.notif-list {
+  max-height: 400px;
+
+  overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.notif-item {
+  display: flex;
+
+  gap: 12px;
+
+  padding: 14px 20px;
+
+  border-bottom: 1px solid $border;
+
+  transition: all 0.15s ease;
+
+  cursor: pointer;
+
+  background: $white;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: $bg-light;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $turquoise;
+    outline-offset: -2px;
+  }
+
+  &.unread {
+    background: rgba($turquoise, 0.03);
+
+    border-left: 3px solid $turquoise;
+  }
+}
+
+.notif-icon-wrap {
+  width: 40px;
+  height: 40px;
+
+  border-radius: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  svg {
+    width: 20px;
+    height: 20px;
+
+    fill: currentColor;
+  }
+}
+
+.notif-body {
+  flex: 1;
+
+  min-width: 0;
+}
+
+.notif-msg {
+  margin: 0 0 4px 0;
+
+  font-size: 13px;
+
+  color: $text-primary;
+
+  font-weight: 500;
+
+  line-height: 1.4;
+}
+
+.notif-time {
+  font-size: 12px;
+
+  color: $text-secondary;
+
+  display: block;
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: $turquoise;
+
+  flex-shrink: 0;
+
+  margin-top: 6px;
+}
+
+.notif-empty {
+  padding: 40px 20px;
+
+  text-align: center;
+
+  color: $text-secondary;
+
+  svg {
+    width: 40px;
+    height: 40px;
+
+    fill: currentColor;
+
+    margin: 0 auto 12px;
+
+    display: block;
+
+    opacity: 0.4;
+  }
+
+  p {
+    margin: 0;
+
+    font-size: 13px;
+  }
+}
+
+.notif-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 40px 20px;
+}
+
+// ===== Profil Utilisateur =====
+.user-btn {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  background: none;
+  border: none;
+
+  cursor: pointer;
+
+  padding: 6px 10px 6px 6px;
+
+  border-radius: 12px;
+
+  transition: all 0.15s ease;
+
+  color: $text-primary;
+
+  &:hover {
+    background: $bg-light;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $turquoise;
+    outline-offset: 2px;
+  }
+
+  &.active {
+    background: rgba($turquoise, 0.08);
+  }
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      135deg,
+      $turquoise,
+      #06b6d4
+    );
+
+  color: $white;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  box-shadow:
+    0 2px 8px rgba($turquoise, 0.25);
+
+  text-transform: uppercase;
+
+  &.loading {
+    background: $bg-light;
+    box-shadow: none;
+  }
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+
+  gap: 1px;
+
+  text-align: left;
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
+}
+
+.user-name {
+  font-size: 13px;
+
+  font-weight: 600;
+
+  color: $text-primary;
+
+  line-height: 1;
+}
+
+.user-role {
+  font-size: 10px;
+
+  color: $text-secondary;
+
+  line-height: 1;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.5px;
+}
+
+.chevron {
+  width: 20px;
+  height: 20px;
+
+  transition: transform 0.2s ease;
+
+  color: $text-secondary;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 20px;
+    height: 20px;
+
+    fill: currentColor;
+  }
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+// ===== Menu Utilisateur Material =====
+::ng-deep .user-menu-material {
+  margin-top: 8px;
+
+  border-radius: 14px !important;
+
+  min-width: 240px !important;
+
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.12) !important;
+
+  .mat-mdc-menu-content {
+    padding: 0 !important;
+  }
+
+  .menu-header {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 18px 20px;
+
+    background: $bg-light;
+
+    border-bottom: 1px solid $border;
+  }
+
+  .menu-avatar {
+    width: 48px;
+    height: 48px;
+
+    border-radius: 50%;
+
+    background:
+      linear-gradient(
+        135deg,
+        $turquoise,
+        #06b6d4
+      );
+
+    color: $white;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    box-shadow:
+      0 2px 8px rgba($turquoise, 0.25);
+
+    text-transform: uppercase;
+  }
+
+  .menu-user-info {
+    flex: 1;
+
+    min-width: 0;
+  }
+
+  .menu-user-name {
+    margin: 0;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: $text-primary;
+  }
+
+  .menu-user-role {
+    margin: 2px 0 0;
+
+    font-size: 11px;
+
+    color: $turquoise;
+
+    font-weight: 600;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.3px;
+  }
+
+  .menu-user-email {
+    margin: 4px 0 0;
+
+    font-size: 12px;
+
+    color: $text-secondary;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+  }
+
+  .mat-mdc-menu-item {
+    padding: 10px 20px !important;
+
+    min-height: 44px !important;
+
+    font-size: 14px !important;
+
+    .mat-icon {
+      margin-right: 12px;
+
+      color: $text-secondary;
+    }
+
+    &:hover {
+      background: $bg-light !important;
+
+      .mat-icon {
+        color: $turquoise;
+      }
+    }
+
+    &.logout-item {
+      color: $danger;
+
+      .mat-icon {
+        color: $danger;
+      }
+
+      &:hover {
+        background: rgba($danger, 0.06) !important;
+      }
+    }
+  }
+}
+
+// ===== Responsive =====
+@media (max-width: 768px) {
+  .app-header {
+    height: 64px;
+
+    padding: 0 16px;
+
+    gap: 8px;
+  }
+
+  .header-divider {
+    display: none;
+  }
+
+  .header-search-wrapper {
+    max-width: 200px;
+  }
+
+  .user-info {
+    display: none;
+  }
+
+  .notif-dropdown {
+    width: 320px;
+
+    right: -40px;
+  }
+
+  .header-brand {
+    width: 72px;
+    height: 56px;
+
+    padding: 2px 4px;
+  }
+
+  .logo-icon {
+    width: 66px;
+    height: 50px;
+
+    border-radius: 10px;
+
+    box-shadow:
+      0 2px 8px rgba($turquoise, 0.12);
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0 12px;
+
+    gap: 6px;
+  }
+
+  .header-brand {
+    width: 60px;
+    height: 48px;
+
+    padding: 2px;
+  }
+
+  .logo-icon {
+    width: 56px;
+    height: 44px;
+
+    border-radius: 9px;
+  }
+
+  .header-search-wrapper {
+    max-width: 130px;
+  }
+
+  .header-search {
+    padding: 6px 10px;
+
+    .search-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .search-input {
+      font-size: 13px;
+    }
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .user-btn {
+    padding: 4px;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+
+    font-size: 11px;
+  }
+
+  .notif-dropdown {
+    width: 300px;
+
+    right: -20px;
+  }
+}
+
+// ===== Footer du dropdown notifications =====
+.notif-footer {
+  padding: 12px 20px;
+
+  border-top: 1px solid $border;
+
+  background: $bg-light;
+
+  text-align: center;
+
+  .notif-view-all {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    color: $turquoise;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+    transition: all 0.15s ease;
+
+    &:hover {
+      color: $turquoise-dark;
+
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $turquoise;
+
+      outline-offset: 3px;
+
+      border-radius: 4px;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+
+      fill: currentColor;
+    }
+  }
+}

@@ -1,0 +1,143 @@
+<aside
+  class="sidebar"
+  [class.collapsed]="collapsed() && !isMobile"
+  [class.mobile]="isMobile"
+  [class.mobile-open]="isOpen"
+>
+  <!-- En-tête : logo + toggle -->
+  <div class="sidebar-logo">
+    @if (!isMobile) {
+      <button
+        class="toggle-btn"
+        (click)="toggleCollapse()"
+        [matTooltip]="collapsed() ? 'Agrandir' : 'Réduire'"
+        matTooltipPosition="right"
+        type="button"
+      >
+        <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+      </button>
+    }
+    @if (isMobile) {
+      <button 
+        class="toggle-btn close-btn-mobile" 
+        (click)="closeMobile()" 
+        aria-label="Fermer le menu"
+        type="button"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </div>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    <ul>
+      @for (item of visibleNavItems(); track item.label) {
+        <li
+          class="nav-item"
+          [class.has-children]="item.children"
+          [class.expanded]="item.expanded"
+          (mouseenter)="onGroupEnter(item)"
+          (mouseleave)="onGroupLeave()"
+        >
+          @if (!item.children) {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              class="nav-link"
+              (click)="onLinkClick()"
+              [matTooltip]="collapsed() && !isMobile ? item.label : ''"
+              matTooltipPosition="right"
+            >
+              <span class="active-bar"></span>
+              <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+              @if (!collapsed() || isMobile) {
+                <span class="nav-label">{{ item.label }}</span>
+              }
+            </a>
+          }
+
+          @if (item.children && item.children.length > 0) {
+            <button
+              class="nav-link nav-group"
+              [class.group-active]="isGroupActive(item)"
+              (click)="toggleMenu(item)"
+              [matTooltip]="collapsed() && !isMobile ? item.label : ''"
+              matTooltipPosition="right"
+              type="button"
+            >
+              <span class="active-bar"></span>
+              <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+              @if (!collapsed() || isMobile) {
+                <span class="nav-label">{{ item.label }}</span>
+                <mat-icon class="chevron" [class.rotated]="item.expanded">
+                  expand_more
+                </mat-icon>
+              }
+            </button>
+
+            <div
+              class="sub-menu-wrapper"
+              [class.open]="item.expanded && (!collapsed() || isMobile)"
+            >
+              <ul class="sub-menu">
+                @for (child of item.children; track child.label) {
+                  <li>
+                    <a
+                      [routerLink]="child.route"
+                      routerLinkActive="active"
+                      class="sub-link"
+                      (click)="onLinkClick()"
+                    >
+                      <span class="connector"></span>
+                      <mat-icon class="sub-icon">{{ child.icon }}</mat-icon>
+                      <span class="sub-label">{{ child.label }}</span>
+                      <span class="active-dot"></span>
+                    </a>
+                  </li>
+                }
+              </ul>
+            </div>
+
+            @if (collapsed() && !isMobile && flyoutItem === item) {
+              <div
+                class="flyout"
+                (mouseenter)="onGroupEnter(item)"
+                (mouseleave)="onGroupLeave()"
+              >
+                <p class="flyout-title">{{ item.label }}</p>
+                @for (child of item.children; track child.label) {
+                  <a
+                    [routerLink]="child.route"
+                    routerLinkActive="active"
+                    class="flyout-link"
+                    (click)="onLinkClick()"
+                  >
+                    <mat-icon class="sub-icon">{{ child.icon }}</mat-icon>
+                    <span>{{ child.label }}</span>
+                  </a>
+                }
+              </div>
+            }
+          }
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <!-- Pied : profil -->
+  <div class="sidebar-footer">
+    <button class="profile-btn" (click)="logout()" type="button">
+      <div class="avatar">
+        {{ userInitials }}
+      </div>
+      @if (!collapsed() || isMobile) {
+        <div class="profile-info">
+          <span class="profile-name">{{ userFullName }}</span>
+          <span class="profile-role">{{ userRole }}</span>
+        </div>
+        <mat-icon class="logout-icon">logout</mat-icon>
+      }
+    </button>
+  </div>
+</aside>

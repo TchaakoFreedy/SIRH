@@ -1,0 +1,160 @@
+# ==========================================
+
+# ENVIRONMENT VARIABLES / SECRETS
+
+# ==========================================
+
+.env
+.env.*
+!.env.example
+
+# ==========================================
+
+# ANGULAR - BUILD OUTPUT
+
+# ==========================================
+
+dist/
+tmp/
+out-tsc/
+bazel-out/
+.angular/cache/
+.sass-cache/
+coverage/
+libpeerconnection.log
+testem.log
+typings/
+**screenshots**/
+
+# ==========================================
+
+# ANGULAR - NODE
+
+# ==========================================
+
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ==========================================
+
+# SPRING BOOT / MAVEN
+
+# ==========================================
+
+target/
+**/target/
+
+.mvn/wrapper/maven-wrapper.jar
+
+# ==========================================
+
+# FILE UPLOADS
+
+# ==========================================
+
+uploads/
+**/uploads/
+sirh-backend/uploads/
+
+# ==========================================
+
+# LOGS
+
+# ==========================================
+
+*.log
+logs/
+
+# ==========================================
+
+# IDE - INTELLIJ IDEA
+
+# ==========================================
+
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# ==========================================
+
+# IDE - ECLIPSE / STS
+
+# ==========================================
+
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# ==========================================
+
+# IDE - VS CODE
+
+# ==========================================
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+
+# ==========================================
+
+# OTHER IDEs / EDITORS
+
+# ==========================================
+
+.c9/
+*.launch
+*.sublime-workspace
+.history/
+.connect.lock
+
+# ==========================================
+
+# NETBEANS
+
+# ==========================================
+
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+# ==========================================
+
+# SASS
+
+# ==========================================
+
+.sass-cache/
+
+# ==========================================
+
+# SYSTEM FILES
+
+# ==========================================
+
+.DS_Store
+Thumbs.db
+
+# ==========================================
+
+# PROJECT / TOOL FILES
+
+# ==========================================
+
+HELP.md
+.factorypath
+# ==========================================
+# PROJECT LOGS
+# ==========================================
+logs.txt
+*.log
+logs/

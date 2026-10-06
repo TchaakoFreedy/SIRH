@@ -1,0 +1,305 @@
+<!-- src/app/features/performance/components/employee-ranking/employee-ranking.component.html -->
+
+<div class="ranking-container">
+  
+  <!-- Feux d'artifice (superposés) -->
+  <div class="fireworks-container" *ngIf="showFireworks && !isLoading">
+    <div class="particle" *ngFor="let p of particles" 
+         [style.left.%]="p.x" 
+         [style.top.%]="p.y"
+         [style.background]="p.color"
+         [style.animation-delay]="p.delay + 's'"
+         [style.animation-duration]="p.duration + 's'"
+         [style.width.px]="p.size"
+         [style.height.px]="p.size">
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="ranking-header animate-fade-in">
+    <div class="header-left">
+      <h1>
+        <span class="material-symbols-outlined">leaderboard</span>
+        Classement des employés
+      </h1>
+      <p>Découvrez les meilleurs performeurs de l'entreprise</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline" (click)="loadRanking()">
+        <span class="material-symbols-outlined">refresh</span>
+        Actualiser
+      </button>
+    </div>
+  </div>
+
+  <!-- FILTRES -->
+  <div class="filters-bar animate-fade-in">
+    <div class="filters-left">
+      <div class="search-box">
+        <span class="material-symbols-outlined">search</span>
+        <input 
+          type="text" 
+          [formControl]="searchControl"
+          placeholder="Rechercher un employé..."
+          class="search-input"
+        />
+        @if (searchControl.value) {
+          <button class="clear-btn" (click)="clearFilters()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+      
+      @if (departments.length > 0) {
+        <div class="filter-select">
+          <span class="material-symbols-outlined">business</span>
+          <select [(ngModel)]="filterByDepartment" (change)="onDepartmentChange(filterByDepartment)">
+            <option value="">Tous les départements</option>
+            @for (dept of departments; track dept) {
+              <option [value]="dept">{{ dept }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+    
+    <div class="filters-right">
+      <div class="year-selector">
+        <span class="material-symbols-outlined">calendar_today</span>
+        <select [(ngModel)]="selectedYear" (change)="onYearChange(selectedYear)">
+          @for (year of years; track year) {
+            <option [value]="year">{{ year }}</option>
+          }
+        </select>
+      </div>
+      
+      <div class="ranking-stats">
+        <span class="badge">{{ totalItems }} employés</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  @if (isLoading) {
+    <div class="loading-spinner">
+      <div class="spinner-ring"></div>
+      <span>Chargement du classement...</span>
+    </div>
+  }
+
+  <!-- CONTENU -->
+  @if (!isLoading) {
+    
+    <!-- PODIUM (Top 3) -->
+    @if (filteredRanking.length >= 3 && !searchTerm && !filterByDepartment) {
+      <div class="podium-section animate-slide-up">
+        <div class="podium-title">
+          <span class="material-symbols-outlined">workspace_premium</span>
+          <h2>Top Performers</h2>
+        </div>
+        <div class="podium">
+          <!-- 2ème -->
+          @if (filteredRanking[1]) {
+            <div class="podium-item second animate-pop" style="animation-delay: 0.2s"
+                 [class.champion]="isBestEmployee(filteredRanking[1].employeId)">
+              <div class="podium-rank">
+                <span class="material-symbols-outlined rank-icon silver">emoji_events</span>
+              </div>
+              <div class="podium-avatar">
+                <div class="avatar-circle">{{ getInitials(filteredRanking[1].employeNom) }}</div>
+                <div class="podium-badge silver-badge">2</div>
+              </div>
+              <div class="podium-name">{{ filteredRanking[1].employeNom }}</div>
+              <!-- <div class="podium-score">
+                <span class="score-pts">{{ filteredRanking[1].scoreTotal?.toFixed(1) }} pts</span>
+              </div> -->
+              <div class="podium-bar silver-bar" style="height: 70%;">
+                <span class="podium-percent">{{ filteredRanking[1].scoreTotal?.toFixed(0) }}pts</span>
+              </div>
+            </div>
+          }
+          
+          <!-- 1er -->
+          @if (filteredRanking[0]) {
+            <div class="podium-item first animate-pop" style="animation-delay: 0s"
+                 [class.champion]="isBestEmployee(filteredRanking[0].employeId)">
+              <div class="podium-rank">
+                <span class="material-symbols-outlined rank-icon gold">emoji_events</span>
+              </div>
+              <div class="podium-avatar">
+                <div class="avatar-circle gold">{{ getInitials(filteredRanking[0].employeNom) }}</div>
+                <div class="podium-badge gold-badge">1</div>
+              </div>
+              <!-- <div class="podium-name">{{ filteredRanking[0].employeNom }}</div>
+              <div class="podium-score">
+                <span class="score-pts">{{ filteredRanking[0].scoreTotal?.toFixed(1) }} pts</span>
+              </div> -->
+              <div class="podium-bar gold-bar" style="height: 100%;">
+                <span class="podium-percent">{{ filteredRanking[0].scoreTotal?.toFixed(0) }}pts</span>
+              </div>
+            </div>
+          }
+          
+          <!-- 3ème -->
+          @if (filteredRanking[2]) {
+            <div class="podium-item third animate-pop" style="animation-delay: 0.4s"
+                 [class.champion]="isBestEmployee(filteredRanking[2].employeId)">
+              <div class="podium-rank">
+                <span class="material-symbols-outlined rank-icon bronze">emoji_events</span>
+              </div>
+              <div class="podium-avatar">
+                <div class="avatar-circle">{{ getInitials(filteredRanking[2].employeNom) }}</div>
+                <div class="podium-badge bronze-badge">3</div>
+              </div>
+              <!-- <div class="podium-name">{{ filteredRanking[2].employeNom }}</div>
+              <div class="podium-score">
+                <span class="score-pts">{{ filteredRanking[2].scoreTotal?.toFixed(1) }} pts</span>
+              </div> -->
+              <div class="podium-bar bronze-bar" style="height: 50%;">
+                <span class="podium-percent">{{ filteredRanking[2].scoreTotal?.toFixed(0) }}pts</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- TABLEAU DU CLASSEMENT -->
+    <div class="ranking-table-card animate-slide-up">
+      <div class="table-scroll">
+        <table class="ranking-table">
+          <thead>
+            <tr>
+              <th class="col-rank">Rang</th>
+              <th class="col-employee">Employé</th>
+              <th class="col-department">Département</th>
+              <th class="col-score">Score</th>
+              <th class="col-mention">Mention</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of getPaginatedData(); track item.employeId) {
+              <tr 
+                [class.current-user]="isCurrentUser(item.employeId)"
+                [class.top-three]="item.rang && item.rang <= 3"
+                [class.best-employee]="isBestEmployee(item.employeId)"
+                class="animate-row">
+                <td class="col-rank">
+                  <span class="rank-number" [style.color]="getRankColor(item.rang)">
+                    {{ item.rang }}
+                  </span>
+                  @if (item.rang === 1) {
+                    <span class="rank-medal gold-medal">
+                      <span class="material-symbols-outlined">emoji_events</span>
+                    </span>
+                  }
+                  @if (item.rang === 2) {
+                    <span class="rank-medal silver-medal">
+                      <span class="material-symbols-outlined">emoji_events</span>
+                    </span>
+                  }
+                  @if (item.rang === 3) {
+                    <span class="rank-medal bronze-medal">
+                      <span class="material-symbols-outlined">emoji_events</span>
+                    </span>
+                  }
+                  @if (isBestEmployee(item.employeId) && item.rang > 3) {
+                    <span class="rank-medal gold-medal">
+                      <span class="material-symbols-outlined">emoji_events</span>
+                    </span>
+                  }
+                </td>
+                <td class="col-employee">
+                  <div class="employee-info">
+                    <div class="employee-avatar-small">
+                      {{ getInitials(item.employeNom) }}
+                    </div>
+                    <div class="employee-name">
+                      {{ item.employeNom }}
+                      @if (isCurrentUser(item.employeId)) {
+                        <span class="current-user-badge">Vous</span>
+                      }
+                      @if (isBestEmployee(item.employeId)) {
+                        <span class="best-badge">Meilleur score</span>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <td class="col-department">
+                  <span class="department-tag">{{ item.departementNom || 'Non attribué' }}</span>
+                </td>
+                <td class="col-score">
+                  <div class="score-display">
+                    <div class="score-bar-mini">
+                      <div class="score-fill-mini" 
+                           [style.width.%]="getScorePercentage(item.scoreTotal)"
+                           [style.background]="getScoreColor(item.scoreTotal || 0)">
+                      </div>
+                    </div>
+                    <span class="score-value-text">{{ item.scoreTotal?.toFixed(1) }} pts</span>
+                  </div>
+                </td>
+                <td class="col-mention">
+                  <span class="mention-pill" 
+                        [style.background-color]="getMentionColor(item.mention)"
+                        [class]="'mention-' + getMentionClass(item.mention)">
+                    {{ getMentionLabel(item.mention) }}
+                  </span>
+                </td>
+              </tr>
+            }
+            
+            <!-- Empty state -->
+            @if (getPaginatedData().length === 0) {
+              <tr>
+                <td colspan="5" class="empty-state">
+                  <div class="empty-content">
+                    <span class="material-symbols-outlined">sentiment_dissatisfied</span>
+                    <p>Aucun employé trouvé</p>
+                    <p class="empty-hint">Essayez de modifier vos filtres de recherche</p>
+                    <button class="btn btn-primary" (click)="clearFilters()">Réinitialiser les filtres</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- PAGINATION -->
+      @if (getTotalPages() > 1) {
+        <div class="pagination-footer">
+          <div class="pagination-info">
+            Affichage de {{ currentPage * pageSize + 1 }} à 
+            {{ Math.min((currentPage + 1) * pageSize, totalItems) }} sur {{ totalItems }} employés
+          </div>
+          <div class="pagination-controls">
+            <button class="page-btn" (click)="previousPage()" [disabled]="currentPage === 0">
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            
+            @for (page of getPageNumbers(); track page) {
+              <button 
+                class="page-btn" 
+                [class.active]="page === currentPage"
+                [class.dots]="page === -1"
+                (click)="page !== -1 && goToPage(page)"
+                [disabled]="page === -1">
+                @if (page !== -1) {
+                  <span>{{ page + 1 }}</span>
+                }
+                @if (page === -1) {
+                  <span>…</span>
+                }
+              </button>
+            }
+            
+            <button class="page-btn" (click)="nextPage()" [disabled]="currentPage >= getTotalPages() - 1">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

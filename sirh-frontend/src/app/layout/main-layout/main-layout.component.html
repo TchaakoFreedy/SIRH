@@ -1,0 +1,23 @@
+<div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
+
+  <!-- Sidebar -->
+  <app-sidebar
+    [isOpen]="sidebarOpen()"
+    [isMobile]="isMobile()"
+    (closeSidebar)="closeSidebar()"
+    (collapseChange)="onCollapseChange($event)"
+  />
+
+  <div class="main-area">
+    <!-- Header avec bouton hamburger -->
+    <app-header
+      [showMenuButton]="isMobile()"
+      (menuToggle)="toggleSidebar()"
+    />
+
+    <main class="main-content">
+      <router-outlet />
+    </main>
+  </div>
+
+</div>

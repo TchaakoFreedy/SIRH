@@ -1,0 +1,656 @@
+<!-- src/app/features/rh/paiements/paiements.html -->
+
+<div class="unity-container">
+
+  <!-- ==================== HEADER ==================== -->
+  <div class="page-header-glass">
+    <div class="page-title">
+      <div class="title-icon">
+        <span class="material-symbols-outlined">payments</span>
+      </div>
+      <div>
+        <h1>Paiement des Employes</h1>
+        <p>Gestion des salaires, avances et retenues</p>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-secondary" (click)="reloadAll()" [disabled]="isLoading()">
+        <span class="material-symbols-outlined">refresh</span>
+        {{ isLoading() ? 'Actualisation...' : 'Actualiser' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== STATS ==================== -->
+  <div class="stats-grid">
+    <div class="stat-card primary">
+      <div class="stat-icon"><span class="material-symbols-outlined">account_balance_wallet</span></div>
+      <div class="stat-info">
+        <p>Masse salariale</p>
+        <h3>{{ formatMoney(statsTotal().totalSalaire) }}</h3>
+      </div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-icon"><span class="material-symbols-outlined">savings</span></div>
+      <div class="stat-info">
+        <p>Total avances</p>
+        <h3>{{ formatMoney(statsTotal().totalAvances) }}</h3>
+      </div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-icon"><span class="material-symbols-outlined">content_cut</span></div>
+      <div class="stat-info">
+        <p>Total retenues</p>
+        <h3>{{ formatMoney(statsTotal().totalRetenues) }}</h3>
+      </div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon"><span class="material-symbols-outlined">pending_actions</span></div>
+      <div class="stat-info">
+        <p>Reste a payer</p>
+        <h3>{{ formatMoney(statsTotal().totalRestant) }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FILTRES ==================== -->
+  <div class="search-filter-bar">
+    <div class="search-wrapper">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input
+        type="text"
+        class="search-input"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+        placeholder="Rechercher par nom, prenom, matricule, poste ou departement..."
+        autocomplete="off"
+      />
+      @if (searchTerm()) {
+        <button class="clear-search" (click)="clearSearch()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      }
+    </div>
+
+    <div class="filter-wrapper">
+      <span class="material-symbols-outlined filter-icon">calendar_month</span>
+      <select
+        class="filter-select"
+        [ngModel]="selectedMois()"
+        (ngModelChange)="onMoisChange($event)">
+        @for (m of moisLabels; track $index; let i = $index) {
+          <option [value]="i + 1">{{ m }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-wrapper">
+      <span class="material-symbols-outlined filter-icon">event</span>
+      <select
+        class="filter-select"
+        [ngModel]="selectedAnnee()"
+        (ngModelChange)="onAnneeChange($event)">
+        @for (a of anneesDisponibles(); track a) {
+          <option [value]="a">{{ a }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-results">
+      <span class="result-count">
+        <span class="material-symbols-outlined">people</span>
+        {{ filteredSoldes().length }} employe(s)
+      </span>
+      @if (searchTerm()) {
+        <button class="btn-reset-filters" (click)="resetFilters()">
+          <span class="material-symbols-outlined">refresh</span>
+          Reinitialiser
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ==================== TABLEAU ==================== -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <h2>Registre de paie</h2>
+      </div>
+      <div class="table-actions">
+        <span class="table-info">
+          {{ filteredSoldes().length }} sur {{ soldes().length }} employes
+        </span>
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement des donnees...</p>
+      </div>
+    } @else {
+      <div class="responsive-wrapper">
+        <table class="up-table">
+          <thead>
+            <tr>
+              <th>Matricule</th>
+              <th>Collaborateur</th>
+              <th>Poste & Departement</th>
+              <th class="th-right">Salaire mensuel</th>
+              <th class="th-right">Avances</th>
+              <th class="th-right">Retenues</th>
+              <th class="th-right">Paye</th>
+              <th class="th-right">Reste</th>
+              <th class="th-center">Statut</th>
+              <th class="th-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (solde of paginatedSoldes(); track solde.employeeId) {
+              <tr [class.row-paid]="solde.statut === 'PAYE'"
+                  [class.row-pending]="solde.statut === 'EN_ATTENTE'"
+                  [class.row-partial]="solde.statut === 'PARTIEL'">
+                <td>
+                  <span class="tag-matricule">{{ solde.employeeMatricule }}</span>
+                </td>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar">
+                      {{ getInitials(solde.employeeNom, solde.employeePrenom) }}
+                    </div>
+                    <div>
+                      <div class="name">
+                        {{ solde.employeePrenom }} {{ solde.employeeNom }}
+                      </div>
+                      <div class="meta">{{ solde.employeeTelephone || '-' }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="name">{{ solde.posteNom }}</div>
+                  <div class="meta">{{ solde.departementNom }}</div>
+                </td>
+                <td class="td-right">
+                  <span class="money-value">{{ formatMoney(solde.salaireMensuel) }}</span>
+                </td>
+                <td class="td-right">
+                  <span class="money-value money-warning">
+                    {{ formatMoney(solde.totalAvances) }}
+                  </span>
+                </td>
+                <td class="td-right">
+                  <span class="money-value money-danger">
+                    {{ formatMoney(solde.totalRetenues) }}
+                  </span>
+                </td>
+                <td class="td-right">
+                  <span class="money-value money-success">
+                    {{ formatMoney(solde.totalPaye) }}
+                  </span>
+                </td>
+                <td class="td-right">
+                  <span class="money-value money-primary">
+                    {{ formatMoney(solde.montantRestant) }}
+                  </span>
+                </td>
+                <td class="th-center">
+                  <span class="status-pill" [ngClass]="getStatutClass(solde.statut)">
+                    {{ getStatutLabel(solde.statut) }}
+                  </span>
+                </td>
+                <td>
+                  <div class="actions-cell">
+                    @if (!solde.salaireConfigure) {
+                      <button
+                        class="action-btn warning"
+                        (click)="openSalaireModal(solde)"
+                        title="Configurer le salaire"
+                        [disabled]="!canCreatePaiement()">
+                        <span class="material-symbols-outlined">settings</span>
+                      </button>
+                    } @else {
+                      @if (solde.statut !== 'PAYE') {
+                        <button
+                          class="action-btn primary"
+                          (click)="openPayerModal(solde)"
+                          title="Payer le salaire"
+                          [disabled]="!canCreatePaiement()">
+                          <span class="material-symbols-outlined">payments</span>
+                        </button>
+                      }
+                      <button
+                        class="action-btn warning"
+                        (click)="openAvanceModal(solde)"
+                        title="Faire une avance"
+                        [disabled]="!canCreatePaiement()">
+                        <span class="material-symbols-outlined">savings</span>
+                      </button>
+                      <button
+                        class="action-btn danger"
+                        (click)="openRetenueModal(solde)"
+                        title="Appliquer une retenue"
+                        [disabled]="!canCreatePaiement()">
+                        <span class="material-symbols-outlined">content_cut</span>
+                      </button>
+                    }
+                    <button
+                      class="action-btn info"
+                      (click)="openHistoriqueModal(solde)"
+                      title="Historique">
+                      <span class="material-symbols-outlined">history</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="10">
+                  <div class="empty-state">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    <p>Aucun employe trouve</p>
+                    @if (searchTerm()) {
+                      <p class="empty-hint">Essayez de modifier vos criteres de recherche</p>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ==================== PAGINATION ==================== -->
+      @if (filteredSoldes().length > 0) {
+        <div class="pagination-container">
+          <div class="pagination-info">
+            <span>
+              Affichage de
+              <strong>{{ (currentPage() - 1) * itemsPerPage + 1 }}</strong>
+              a
+              <strong>{{ Math.min(currentPage() * itemsPerPage, filteredSoldes().length) }}</strong>
+              sur
+              <strong>{{ filteredSoldes().length }}</strong>
+              employes
+            </span>
+            <div class="page-size-selector">
+              <label for="pageSize">Lignes par page :</label>
+              <select
+                id="pageSize"
+                [ngModel]="itemsPerPage"
+                (ngModelChange)="onPageSizeChange($event)">
+                <option [value]="5">5</option>
+                <option [value]="10">10</option>
+                <option [value]="25">25</option>
+                <option [value]="50">50</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pagination-controls">
+            <button class="pagination-btn"
+                    (click)="previousPage()"
+                    [disabled]="currentPage() === 1"
+                    [class.disabled]="currentPage() === 1">
+              <span class="material-symbols-outlined">chevron_left</span>
+              <span>Precedent</span>
+            </button>
+
+            <div class="page-numbers">
+              @if (totalPages() > 1) {
+                <button class="page-number"
+                        [class.active]="currentPage() === 1"
+                        (click)="goToPage(1)">
+                  1
+                </button>
+              }
+              @if (currentPage() > 3) {
+                <span class="ellipsis">...</span>
+              }
+              @for (page of getVisiblePages(); track page) {
+                <button class="page-number"
+                        [class.active]="currentPage() === page"
+                        (click)="goToPage(page)">
+                  {{ page }}
+                </button>
+              }
+              @if (currentPage() < totalPages() - 2) {
+                <span class="ellipsis">...</span>
+              }
+              @if (totalPages() > 1) {
+                <button class="page-number"
+                        [class.active]="currentPage() === totalPages()"
+                        (click)="goToPage(totalPages())">
+                  {{ totalPages() }}
+                </button>
+              }
+            </div>
+
+            <button class="pagination-btn"
+                    (click)="nextPage()"
+                    [disabled]="currentPage() === totalPages()"
+                    [class.disabled]="currentPage() === totalPages()">
+              <span>Suivant</span>
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ============ MODALE PAIEMENT =============== -->
+<!-- ============================================ -->
+@if (showPaiementModal()) {
+  <div class="modal-overlay" (click)="$event.target === $event.currentTarget && closePaiementModal()">
+    <div class="modal-glass max-md">
+
+      <div class="modal-top-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">
+            <span class="material-symbols-outlined">
+              @if (form().type === 'PAIEMENT_SALAIRE') { payments }
+              @else if (form().type === 'AVANCE') { savings }
+              @else { content_cut }
+            </span>
+          </div>
+          <div>
+            <h3>
+              @if (form().type === 'PAIEMENT_SALAIRE') { Payer le salaire }
+              @else if (form().type === 'AVANCE') { Nouvelle avance }
+              @else { Nouvelle retenue }
+            </h3>
+            <p>{{ form().employeeLabel }}</p>
+          </div>
+        </div>
+        <button (click)="closePaiementModal()" class="close-btn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body-scroll">
+
+        @if (formError()) {
+          <div class="alert-error">
+            <span class="material-symbols-outlined">error</span>
+            {{ formError() }}
+          </div>
+        }
+
+        <!-- Recapitulatif du solde -->
+        <div class="recap-block">
+          <div class="recap-item">
+            <span class="recap-label">Salaire mensuel</span>
+            <span class="recap-value">{{ formatMoney(form().salaireMensuel) }}</span>
+          </div>
+          <div class="recap-item">
+            <span class="recap-label">Solde restant</span>
+            <span class="recap-value highlight">{{ formatMoney(form().soldeRestant) }}</span>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <div class="block-title">
+            <span class="material-symbols-outlined">info</span>
+            Details de l'operation
+          </div>
+
+          <div class="form-grid grid-2">
+
+            <div class="form-group">
+              <label>Type d'operation</label>
+              <div class="select-wrapper">
+                <select
+                  [ngModel]="form().type"
+                  (ngModelChange)="onChangeFormType($event)">
+                  <option value="PAIEMENT_SALAIRE">Paiement salaire</option>
+                  <option value="AVANCE">Avance sur salaire</option>
+                  <option value="RETENUE">Retenue sur salaire</option>
+                </select>
+                <span class="material-symbols-outlined select-arrow">expand_more</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Montant (FCFA) *</label>
+              <input
+                type="number"
+                [ngModel]="form().montant"
+                (ngModelChange)="onChangeFormMontant($event)"
+                placeholder="Ex: 200000"
+                min="0"
+                step="1000" />
+            </div>
+
+            <div class="form-group">
+              <label>Mois *</label>
+              <div class="select-wrapper">
+                <select
+                  [ngModel]="form().mois"
+                  (ngModelChange)="onChangeFormMois($event)">
+                  @for (m of moisLabels; track $index; let i = $index) {
+                    <option [value]="i + 1">{{ m }}</option>
+                  }
+                </select>
+                <span class="material-symbols-outlined select-arrow">expand_more</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Annee *</label>
+              <div class="select-wrapper">
+                <select
+                  [ngModel]="form().annee"
+                  (ngModelChange)="onChangeFormAnnee($event)">
+                  @for (a of anneesDisponibles(); track a) {
+                    <option [value]="a">{{ a }}</option>
+                  }
+                </select>
+                <span class="material-symbols-outlined select-arrow">expand_more</span>
+              </div>
+            </div>
+
+            <div class="form-group span-2">
+              <label>
+                Motif
+                @if (form().type === 'RETENUE') {
+                  <span class="required">*</span>
+                }
+              </label>
+              <input
+                type="text"
+                [ngModel]="form().motif"
+                (ngModelChange)="onChangeFormMotif($event)"
+                [placeholder]="form().type === 'RETENUE'
+                  ? 'Ex: Absence non justifiee du 12/03'
+                  : 'Optionnel'" />
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer-bar">
+        <button class="btn btn-ghost" style="margin-right: auto;" (click)="closePaiementModal()">
+          Annuler
+        </button>
+        <button class="btn btn-primary"
+                (click)="submitPaiement()"
+                [disabled]="isSubmitting()">
+          <span class="material-symbols-outlined">
+            @if (isSubmitting()) { progress_activity } @else { check_circle }
+          </span>
+          {{ isSubmitting() ? 'Enregistrement...' : 'Valider' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- ============ MODALE HISTORIQUE ============= -->
+<!-- ============================================ -->
+@if (showHistoriqueModal() && historiqueEmployee()) {
+  <div class="modal-overlay" (click)="$event.target === $event.currentTarget && closeHistoriqueModal()">
+    <div class="modal-glass max-lg">
+
+      <div class="modal-top-header">
+        <div class="modal-title-group">
+          <div class="avatar big">
+            {{ getInitials(historiqueEmployee().employeeNom, historiqueEmployee().employeePrenom) }}
+          </div>
+          <div>
+            <h3>{{ historiqueEmployee().employeePrenom }} {{ historiqueEmployee().employeeNom }}</h3>
+            <p>Historique des paiements</p>
+          </div>
+        </div>
+        <button (click)="closeHistoriqueModal()" class="close-btn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body-scroll">
+
+        @if (isLoadingHistorique()) {
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Chargement de l'historique...</p>
+          </div>
+        } @else {
+          @if (historiquePaiements().length === 0) {
+            <div class="empty-mini">Aucun paiement enregistre pour cet employe.</div>
+          } @else {
+            <div class="history-table-wrapper">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Montant</th>
+                    <th>Motif</th>
+                    <th>Recu</th>
+                    <th class="th-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of historiquePaiements(); track p.id) {
+                    <tr>
+                      <td>{{ formatDate(p.datePaiement) }}</td>
+                      <td>
+                        <span class="type-badge" [ngClass]="{
+                          'type-paiement': p.type === 'PAIEMENT_SALAIRE',
+                          'type-avance': p.type === 'AVANCE',
+                          'type-retenue': p.type === 'RETENUE'
+                        }">
+                          {{ getTypeLabel(p.type) }}
+                        </span>
+                      </td>
+                      <td class="td-right">
+                        <strong>{{ formatMoney(p.montant) }}</strong>
+                      </td>
+                      <td>{{ p.motif || '-' }}</td>
+                      <td>
+                        <code class="numero-recu">{{ p.numeroRecu || '-' }}</code>
+                      </td>
+                      <td class="th-center">
+                        <div class="actions-cell">
+                          <button
+                            class="action-btn primary"
+                            (click)="downloadRecu(p)"
+                            [disabled]="isDownloading()"
+                            title="Telecharger le recu">
+                            <span class="material-symbols-outlined">download</span>
+                          </button>
+                          @if (canDeletePaiement()) {
+                            <button
+                              class="action-btn danger"
+                              (click)="deletePaiement(p)"
+                              title="Supprimer">
+                              <span class="material-symbols-outlined">delete</span>
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+      </div>
+
+      <div class="modal-footer-bar">
+        <button class="btn btn-primary" (click)="closeHistoriqueModal()">Fermer</button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- ============ MODALE SALAIRE ================ -->
+<!-- ============================================ -->
+@if (showSalaireModal() && salaireEmployee()) {
+  <div class="modal-overlay" (click)="$event.target === $event.currentTarget && closeSalaireModal()">
+    <div class="modal-glass max-md">
+
+      <div class="modal-top-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">
+            <span class="material-symbols-outlined">settings</span>
+          </div>
+          <div>
+            <h3>Configurer le salaire mensuel</h3>
+            <p>{{ salaireEmployee().employeePrenom }} {{ salaireEmployee().employeeNom }}</p>
+          </div>
+        </div>
+        <button (click)="closeSalaireModal()" class="close-btn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body-scroll">
+        <div class="form-block">
+          <div class="block-title">
+            <span class="material-symbols-outlined">payments</span>
+            Salaire mensuel net
+          </div>
+          <div class="form-group">
+            <label>Montant en FCFA *</label>
+            <input
+              type="number"
+              [ngModel]="salaireValue()"
+              (ngModelChange)="onChangeSalaireValue($event)"
+              placeholder="Ex: 250000"
+              min="0"
+              step="1000" />
+            <small class="hint">
+              Ce montant sera utilise pour le calcul du solde et des paiements.
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer-bar">
+        <button class="btn btn-ghost" style="margin-right: auto;" (click)="closeSalaireModal()">
+          Annuler
+        </button>
+        <button class="btn btn-primary"
+                (click)="submitSalaire()"
+                [disabled]="isSubmitting()">
+          <span class="material-symbols-outlined">
+            @if (isSubmitting()) { progress_activity } @else { check_circle }
+          </span>
+          {{ isSubmitting() ? 'Enregistrement...' : 'Enregistrer' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

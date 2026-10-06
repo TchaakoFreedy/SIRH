@@ -1,0 +1,504 @@
+// src/app/layout/sidebar/sidebar.component.ts
+
+import {
+  Component,
+  signal,
+  Output,
+  EventEmitter,
+  OnInit,
+  inject,
+  OnDestroy,
+  Input
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule, RouterLinkActive } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { NavItem } from '../../core/models/nav-item.model';
+import { AuthService } from '../../services/auth.service';
+import { PermissionService } from '../../core/services/permission.service';
+import { Subject, merge, takeUntil } from 'rxjs';
+
+@Component({
+  selector: 'app-sidebar',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    RouterLinkActive,
+    MatIconModule,
+    MatTooltipModule
+  ],
+  templateUrl: './sidebar.component.html',
+  styleUrl: './sidebar.component.scss'
+})
+export class SidebarComponent implements OnInit, OnDestroy {
+  @Input() isOpen = false;
+  @Input() isMobile = false;
+
+  @Output() closeSidebar = new EventEmitter<void>();
+  @Output() collapseChange = new EventEmitter<boolean>();
+
+  public authService = inject(AuthService);
+  private permissionService = inject(PermissionService);
+  private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
+
+  collapsed = signal(false);
+  flyoutItem: NavItem | null = null;
+  private flyoutTimer: ReturnType<typeof setTimeout> | null = null;
+
+  visibleNavItems = signal<NavItem[]>([]);
+
+  get currentUser() {
+    return this.authService.getCurrentUser();
+  }
+
+  get userInitials(): string {
+    const user = this.currentUser;
+    if (!user) return 'U';
+    const firstName = user.firstName?.[0] || '';
+    const lastName = user.lastName?.[0] || '';
+    return (firstName + lastName).toUpperCase() || 'U';
+  }
+
+  get userFullName(): string {
+    const user = this.currentUser;
+    if (!user) return 'Utilisateur';
+    return `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilisateur';
+  }
+
+  get userRole(): string {
+    const user = this.currentUser;
+    return user?.role || 'Rôle';
+  }
+
+  private allNavItems: NavItem[] = [
+    {
+      label: 'Dashboard',
+      icon: 'dashboard',
+      route: '/app/dashboard'
+    },
+    {
+      label: 'Mon espace',
+      icon: 'people',
+      route: '/app/mon-espace/profil',
+    },
+    {
+      label: 'Employés',
+      icon: 'people',
+      route: '/app/rh/employes',
+      requiredPermission: 'EMPLOYEE_VIEW_ALL'
+    },
+    {
+      label: 'Contrats',
+      icon: 'description',
+      route: '/app/contrats',
+      requiredPermission: 'CONTRACT_VIEW_ALL'
+    },
+    {
+      label: 'Gestion Cacao',
+      icon: 'agriculture',
+      expanded: false,
+      children: [
+        {
+          label: 'Acheteurs / Collecteurs',
+          icon: 'groups',
+          route: '/app/cacao/acheteurs',
+          requiredPermission: 'CACAO_VIEW'
+        },
+        {
+          label: 'Avances financières',
+          icon: 'payments',
+          route: '/app/cacao/avances',
+          requiredPermission: 'CACAO_VIEW'
+        },
+        {
+          label: 'Réceptions de cacao',
+          icon: 'inventory_2',
+          route: '/app/cacao/receptions',
+          requiredPermission: 'CACAO_VIEW'
+        },
+        {
+          label: 'Remboursements',
+          icon: 'payments',
+          route: '/app/cacao/remboursements',
+          requiredPermission: 'CACAO_VIEW'
+        }
+      ]
+    },
+    {
+      label: 'Organisation',
+      icon: 'account_tree',
+      expanded: false,
+      children: [
+        {
+          label: 'Entreprises',
+          icon: 'business',
+          route: '/app/organisation/entreprises',
+          requiredPermission: 'COMPANY_VIEW_ALL'
+        },
+        {
+          label: 'Départements',
+          icon: 'apartment',
+          route: '/app/organisation/departements',
+          requiredPermission: 'DEPARTMENT_VIEW_ALL'
+        },
+        {
+          label: 'Postes',
+          icon: 'work_outline',
+          route: '/app/organisation/postes',
+          requiredPermission: 'POSITION_VIEW_ALL'
+        }
+      ]
+    },
+    {
+      label: 'Congés & Absences',
+      icon: 'event_available',
+      expanded: false,
+      children: [
+        {
+          label: 'Mes demandes',
+          icon: 'calendar_today',
+          route: '/app/rh/conges',
+          requiredPermission: 'LEAVE_VIEW_OWN'
+        },
+        {
+          label: 'Nouvelle demande',
+          icon: 'add_circle',
+          route: '/app/rh/conges/demande',
+          requiredPermission: 'LEAVE_CREATE'
+        },
+        {
+          label: 'Gestion des demandes',
+          icon: 'event_busy',
+          route: '/app/conges/gestion-rh',
+          requiredPermission: 'LEAVE_VIEW_ALL'
+        },
+        {
+          label: 'Historique',
+          icon: 'history',
+          route: '/app/rh/conges/historique-conges',
+          requiredPermission: 'LEAVE_VIEW_ALL'
+        },
+        {
+          label: 'Configuration congés',
+          icon: 'settings',
+          route: '/app/rh/configuration-conge',
+          requiredPermission: 'SYSTEM_ADMIN'
+        }
+      ]
+    },
+    {
+      label: 'Documents',
+      icon: 'description',
+      expanded: false,
+      children: [
+        {
+          label: 'Certificat de travail',
+          icon: 'verified',
+          route: '/app/rh/documents',
+          requiredPermission: 'DOC_VIEW'
+        },
+      ]
+    },
+    {
+      label: 'Discipline',
+      icon: 'gavel',
+      expanded: false,
+      children: [
+        {
+          label: 'Mes demandes',
+          icon: 'folder_shared',
+          route: '/app/discipline/mes-demandes',
+          requiredPermission: 'EXPLANATION_REQUEST_VIEW_OWN'
+        },
+        {
+          label: 'Toutes les demandes',
+          icon: 'help_outline',
+          route: '/app/discipline/demandes',
+          requiredPermission: 'EXPLANATION_REQUEST_VIEW'
+        },
+        {
+          label: 'Nouvelle demande',
+          icon: 'add_circle_outline',
+          route: '/app/discipline/demandes/create',
+          requiredPermission: 'EXPLANATION_REQUEST_CREATE'
+        },
+        {
+          label: 'Importer des demandes',
+          icon: 'upload_file',
+          route: '/app/discipline/demandes/import',
+          requiredPermission: 'EXPLANATION_REQUEST_CREATE'
+        },
+        {
+          label: 'Mes sanctions',
+          icon: 'shield_person',
+          route: '/app/discipline/mes-sanctions',
+          requiredPermission: 'SANCTION_VIEW_OWN'
+        },
+        {
+          label: 'Toutes les sanctions',
+          icon: 'warning',
+          route: '/app/discipline/sanctions',
+          requiredPermission: 'SANCTION_VIEW'
+        },
+        {
+          label: 'Nouvelle sanction',
+          icon: 'add_alert',
+          route: '/app/discipline/sanctions/create',
+          requiredPermission: 'SANCTION_CREATE'
+        }
+      ]
+    },
+    {
+      label: 'Performance',
+      icon: 'trending_up',
+      expanded: false,
+      children: [
+        {
+          label: 'Dashboard Performance',
+          icon: 'insights',
+          route: '/app/performance/dashboard',
+          requiredPermission: 'PERFORMANCE_VIEW_ALL'
+        },
+        {
+          label: 'Mes performances',
+          icon: 'person',
+          route: '/app/performance/my-performance',
+          requiredPermission: 'PERFORMANCE_VIEW'
+        },
+        {
+          label: 'Évaluations',
+          icon: 'rate_review',
+          route: '/app/performance/evaluations',
+          requiredPermission: 'PERFORMANCE_VIEW_ALL'
+        },
+        {
+          label: 'Nouvelle évaluation',
+          icon: 'post_add',
+          route: '/app/performance/evaluations/create',
+          requiredPermission: 'PERFORMANCE_CREATE'
+        },
+        {
+          label: 'Critères',
+          icon: 'checklist',
+          route: '/app/performance/criteres',
+          requiredPermission: 'PERFORMANCE_CRITERIA_VIEW'
+        },
+        {
+          label: 'Classement',
+          icon: 'leaderboard',
+          route: '/app/performance/classement',
+          requiredPermission: 'RANKING_VIEW'
+        }
+      ]
+    },
+    {
+      label: 'Paie',
+      icon: 'attach_money',
+      expanded: false,
+      children: [
+        {
+          label: 'Paiement espèces',
+          icon: 'payments',
+          route: '/app/rh/paiements',
+          requiredPermission: 'PAYSLIP_VIEW_ALL'
+        },
+        {
+          label: 'Mes bulletins',
+          icon: 'receipt',
+          route: '/app/paie/mes-bulletins',
+          requiredPermission: 'PAYSLIP_VIEW'
+        },
+        {
+          label: 'Gestion des bulletins',
+          icon: 'receipt_long',
+          route: '/app/paie/bulletins',
+          requiredPermission: 'PAYSLIP_VIEW_ALL'
+        },
+        {
+          label: 'Import PDF',
+          icon: 'upload_file',
+          route: '/app/paie/import',
+          requiredPermission: 'PAYSLIP_CREATE'
+        },
+      ]
+    },
+    {
+      label: 'Admin',
+      icon: 'admin_panel_settings',
+      expanded: false,
+      children: [
+        {
+          label: 'Rôles',
+          icon: 'groups',
+          route: '/app/admin/roles',
+          requiredPermission: 'ROLE_VIEW'
+        },
+        {
+          label: 'Permissions',
+          icon: 'security',
+          route: '/app/admin/permissions',
+          requiredPermission: 'PERMISSION_VIEW'
+        },
+        {
+          label: 'Permissions utilisateurs',
+          icon: 'manage_accounts',
+          route: '/app/admin/user-permissions',
+          requiredPermission: 'USER_PERMISSION_VIEW'
+        }
+      ]
+    }
+  ];
+
+  constructor() {}
+
+  ngOnInit(): void {
+    const user = this.authService.getCurrentUser();
+    console.log('Utilisateur au chargement:', user);
+    console.log('Permissions au chargement:', user?.permissions);
+
+    this.filterMenuItems();
+    this.autoExpandActiveGroup();
+
+    const permissionsStream$ = (this.permissionService as any).permissions$
+      ? (this.permissionService as any).permissions$
+      : this.authService.currentUser$;
+
+    merge(this.authService.currentUser$, permissionsStream$)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        console.log('Rafraichissement du menu Sidebar avec les permissions:', this.currentUser?.permissions);
+        this.filterMenuItems();
+        this.autoExpandActiveGroup();
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private filterMenuItems(): void {
+    const isAdmin = this.permissionService.isAdminSync();
+
+    const filterItems = (items: NavItem[]): NavItem[] => {
+      return items
+        .map(item => {
+          if (item.children && item.children.length > 0) {
+            const filteredChildren = filterItems(item.children);
+            if (filteredChildren.length > 0) {
+              return {
+                ...item,
+                children: filteredChildren
+              };
+            }
+            return null;
+          }
+          return this.isItemVisible(item, isAdmin) ? item : null;
+        })
+        .filter(item => item !== null) as NavItem[];
+    };
+
+    const filtered = filterItems(this.allNavItems);
+    this.visibleNavItems.set(filtered);
+  }
+
+  private isItemVisible(item: NavItem, isAdmin: boolean): boolean {
+    if (isAdmin) return true;
+
+    if (item.requiredPermission) {
+      const hasPerm = this.permissionService.hasPermissionSync(item.requiredPermission);
+      console.log(`Verification: ${item.requiredPermission} -> ${hasPerm}`);
+      return hasPerm;
+    }
+
+    if (item.requiredPermissions && item.requiredPermissions.length > 0) {
+      return this.permissionService.hasAnyPermissionSync(item.requiredPermissions);
+    }
+
+    return true;
+  }
+
+  private autoExpandActiveGroup(): void {
+    const url = this.router.url;
+    const items = this.visibleNavItems();
+    items.forEach(item => {
+      if (item.children?.some(c => c.route && url.startsWith(c.route))) {
+        item.expanded = true;
+      }
+    });
+  }
+
+  private closeAllGroups(): void {
+    const items = this.visibleNavItems();
+    items.forEach(item => {
+      if (item.children && item.children.length > 0) {
+        item.expanded = false;
+      }
+    });
+  }
+
+  isGroupActive(item: NavItem): boolean {
+    if (!item.children) return false;
+    const url = this.router.url;
+    return item.children.some(c => c.route && url.startsWith(c.route));
+  }
+
+  toggleCollapse(): void {
+    this.collapsed.update(v => !v);
+    this.collapseChange.emit(this.collapsed());
+    this.flyoutItem = null;
+  }
+
+  closeMobile(): void {
+    this.closeSidebar.emit();
+  }
+
+  toggleMenu(item: NavItem): void {
+    if (this.collapsed()) {
+      this.collapsed.set(false);
+      this.collapseChange.emit(false);
+      setTimeout(() => {
+        this.closeAllGroups();
+        item.expanded = true;
+      }, 100);
+      return;
+    }
+
+    const visibleItems = this.visibleNavItems();
+    visibleItems.forEach(i => {
+      if (i !== item && i.children && i.children.length > 0) {
+        i.expanded = false;
+      }
+    });
+
+    item.expanded = !item.expanded;
+  }
+
+  onLinkClick(): void {
+    if (this.isMobile) {
+      this.closeMobile();
+    }
+    this.flyoutItem = null;
+  }
+
+  onGroupEnter(item: NavItem): void {
+    if (!this.collapsed() || !item.children) return;
+    if (this.flyoutTimer) clearTimeout(this.flyoutTimer);
+    this.flyoutItem = item;
+  }
+
+  onGroupLeave(): void {
+    if (!this.collapsed()) return;
+    this.flyoutTimer = setTimeout(() => (this.flyoutItem = null), 150);
+  }
+
+  trackByLabel = (_: number, item: NavItem) => item.label;
+
+  logout(): void {
+    this.authService.logout();
+  }
+}

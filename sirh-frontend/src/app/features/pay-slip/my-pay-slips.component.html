@@ -1,0 +1,164 @@
+<!-- src/app/features/pay-slip/my-pay-slips.component.html -->
+
+<div class="pay-slip-list-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1>
+      <span class="material-symbols-outlined">description</span>
+      Mes Bulletins de Paie
+    </h1>
+    <div class="header-actions">
+      <button class="btn btn-primary" routerLink="/app/paie/upload">
+        <span class="material-symbols-outlined">upload</span>
+        Importer
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid" *ngIf="paySlips.length > 0">
+    <div class="stat-card">
+      <span class="stat-value">{{ paySlips.length }}</span>
+      <span class="stat-label">Total bulletins</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ totalNetSalary | currency:'XOF':'symbol':'1.0-0' }}</span>
+      <span class="stat-label">Salaire net total</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ totalPagesCount }}</span>
+      <span class="stat-label">Pages totales</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ latestPeriod }}</span>
+      <span class="stat-label">Dernière période</span>
+    </div>
+  </div>
+
+  <!-- Loading / Error -->
+  <div *ngIf="loading" class="loading-state">
+    <span class="material-symbols-outlined spin">hourglass_top</span>
+    Chargement...
+  </div>
+  <div *ngIf="error" class="error-state">{{ error }}</div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && paySlips.length === 0" class="empty-state">
+    <span class="material-symbols-outlined">receipt_long</span>
+    <h3>Aucun bulletin de paie</h3>
+    <p>Vous n'avez pas encore de bulletin de paie.</p>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && paySlips.length > 0" class="table-container">
+    <!-- Search -->
+    <div class="search-bar">
+      <div class="search-input-wrapper">
+        <span class="material-symbols-outlined">search</span>
+        <input 
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          (input)="applyFilter()"
+          placeholder="Rechercher par période, statut..."
+          class="search-input" />
+        <button *ngIf="searchTerm" class="btn-clear" (click)="clearSearch()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="filter-info" *ngIf="filteredSlips.length !== paySlips.length">
+        {{ filteredSlips.length }} sur {{ paySlips.length }}
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Période</th>
+            <th>Employé</th>
+            <th>Matricule</th>
+            <th>Statut</th>
+            <th>Pages</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let slip of paginatedSlips; trackBy: trackById">
+            <td>
+              <span class="period-badge">{{ slip.period }}</span>
+            </td>
+            <td>
+              <div class="employee-cell">
+                <span class="employee-avatar">{{ (slip.employeeFullName || '?') | slice:0:1 }}</span>
+                {{ slip.employeeFullName }}
+              </div>
+            </td>
+            <td>
+              <span class="matricule">{{ slip.employeeMatricule }}</span>
+            </td>
+          
+            <td>
+              <span class="badge" [class]="getStatusBadgeClass(slip.status)">
+                {{ getStatusLabel(slip.status) }}
+              </span>
+              <span *ngIf="hasErrors(slip)" class="error-indicator" title="Erreurs d'import">
+                <span class="material-symbols-outlined">error</span>
+              </span>
+            </td>
+            <td>
+              <span class="page-count">{{ getPageCount(slip) }}</span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-icon" (click)="viewDetail(slip.id)" title="Voir">
+                  <span class="material-symbols-outlined">visibility</span>
+                </button>
+                <button *ngIf="canDownload" class="btn-icon" (click)="downloadPdf(slip.id)" title="Télécharger PDF">
+                  <span class="material-symbols-outlined">picture_as_pdf</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" *ngIf="filteredSlips.length > itemsPerPage">
+      <div class="pagination-info">
+        {{ (currentPage - 1) * itemsPerPage + 1 }} -
+        {{ Math.min(currentPage * itemsPerPage, filteredSlips.length) }}
+        sur {{ filteredSlips.length }}
+      </div>
+      <div class="pagination-controls">
+        <button class="btn-page" (click)="previousPage()" [disabled]="currentPage === 1">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        
+        <button class="btn-page" (click)="goToPage(1)" [class.active]="currentPage === 1">
+          1
+        </button>
+        
+        <span *ngIf="visiblePages.length > 0 && visiblePages[0] > 2" class="pagination-ellipsis">…</span>
+        
+        <button *ngFor="let page of visiblePages" 
+                class="btn-page" 
+                (click)="goToPage(page)"
+                [class.active]="currentPage === page">
+          {{ page }}
+        </button>
+        
+        <span *ngIf="visiblePages.length > 0 && visiblePages[visiblePages.length - 1] < totalPages - 1" class="pagination-ellipsis">…</span>
+        
+        <button *ngIf="totalPages > 1" class="btn-page" (click)="goToPage(totalPages)" [class.active]="currentPage === totalPages">
+          {{ totalPages }}
+        </button>
+        
+        <button class="btn-page" (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

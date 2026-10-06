@@ -1,0 +1,268 @@
+<!-- src/app/features/cacao/components/remboursement-list/remboursement-list.component.html -->
+
+<div class="unity-container">
+
+  <!-- HEADER -->
+  <div class="page-header-glass">
+    <div class="page-title">
+      <div class="title-icon">
+        <span class="material-symbols-outlined">payments</span>
+      </div>
+      <div>
+        <h1>Remboursements</h1>
+        <p>Suivi des remboursements effectues aux acheteurs / collecteurs</p>
+      </div>
+    </div>
+    <div class="btn-group">
+      <a routerLink="/app/cacao/acheteurs" class="btn btn-secondary">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Retour aux acheteurs
+      </a>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card primary">
+      <div class="stat-icon"><span class="material-symbols-outlined">payments</span></div>
+      <div class="stat-info">
+        <p>Total rembourse</p>
+        <h3>{{ totalRemboursements | number:'1.2-2' }} FCFA</h3>
+      </div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon"><span class="material-symbols-outlined">receipt_long</span></div>
+      <div class="stat-info">
+        <p>Nombre de remboursements</p>
+        <h3>{{ filteredRemboursements.length }}</h3>
+      </div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-icon"><span class="material-symbols-outlined">groups</span></div>
+      <div class="stat-info">
+        <p>Acheteurs concernes</p>
+        <h3>{{ acheteurs().length }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECHERCHE & FILTRES -->
+  <div class="search-filter-bar">
+    <div class="search-wrapper">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input
+        type="text"
+        class="search-input"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event); currentPage.set(1)"
+        placeholder="Rechercher par acheteur, motif, mode de paiement..."
+        autocomplete="off"
+      />
+      @if (searchTerm()) {
+        <button class="clear-search" (click)="clearSearch()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      }
+    </div>
+
+    <div class="filter-wrapper">
+      <span class="material-symbols-outlined filter-icon">filter_list</span>
+      <select class="filter-select" [ngModel]="selectedAcheteurId()" (ngModelChange)="onAcheteurFilterChange($event)">
+        <option value="">Tous les acheteurs</option>
+        @for (a of acheteurs(); track a.id) {
+          <option [value]="a.id">{{ a.nomComplet }}</option>
+        }
+      </select>
+      <span class="material-symbols-outlined select-arrow">expand_more</span>
+      @if (selectedAcheteurId()) {
+        <button class="clear-filter" (click)="clearFilter()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      }
+    </div>
+
+    <div class="filter-results">
+      <span class="result-count">
+        <span class="material-symbols-outlined">receipt_long</span>
+        {{ filteredRemboursements.length }} remboursement(s)
+      </span>
+      @if (searchTerm() || selectedAcheteurId()) {
+        <button class="btn-reset-filters" (click)="resetFilters()">
+          <span class="material-symbols-outlined">refresh</span>
+          Reinitialiser
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ETAT DE CHARGEMENT -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-container">
+        <span class="material-symbols-outlined spin">autorenew</span>
+        <p>Chargement des remboursements...</p>
+      </div>
+    </div>
+  }
+
+  <!-- ETAT D'ERREUR -->
+  @if (error() && !loading()) {
+    <div class="error-state">
+      <span class="material-symbols-outlined">error_outline</span>
+      <p>{{ error() }}</p>
+      <button class="btn-retry" (click)="loadData()">
+        <span class="material-symbols-outlined">refresh</span>
+        Reessayer
+      </button>
+    </div>
+  }
+
+  <!-- TABLEAU -->
+  @if (!loading() && !error()) {
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">
+          <span class="material-symbols-outlined">receipt_long</span>
+          <h2>Liste des remboursements</h2>
+        </div>
+        <div class="table-actions">
+          <span class="table-info">{{ paginatedRemboursements.length }} sur {{ filteredRemboursements.length }} remboursements</span>
+        </div>
+      </div>
+
+      <div class="responsive-wrapper">
+        <table class="up-table">
+          <thead>
+            <tr>
+              <th class="text-start">Acheteur</th>
+              <th class="text-end">Quantite Recue (KG)</th>
+              <th class="text-end">Quantite Attendue (KG)</th>
+              <th class="text-end">Surplus (KG)</th>
+              <th class="text-end">Prix Unitaire (FCFA)</th>
+              <th class="text-end">Montant (FCFA)</th>
+              <th class="text-start">Date</th>
+              <th class="text-start">Motif</th>
+              <th class="text-start">Mode Paiement</th>
+              <th class="text-start">N° Bon</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (remb of paginatedRemboursements; track remb.id) {
+              <tr>
+                <td class="text-start">
+                  <div class="user-cell">
+                    <div class="avatar">{{ remb.acheteurNomComplet?.[0] || '?' }}</div>
+                    <div>
+                      <div class="name">{{ remb.acheteurNomComplet }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-end">{{ remb.quantiteRecue | number:'1.3-3' }}</td>
+                <td class="text-end">{{ remb.quantiteAttendue | number:'1.3-3' }}</td>
+                <td class="text-end fw-bold text-success">{{ remb.quantiteSurplus | number:'1.3-3' }}</td>
+                <td class="text-end">{{ remb.prixUnitaire | number:'1.2-2' }}</td>
+                <td class="text-end fw-bold text-primary">{{ remb.montantRembourse | number:'1.2-2' }}</td>
+                <td class="text-start">{{ remb.dateRemboursement | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="text-start">{{ remb.motifRemboursement || '-' }}</td>
+                <td class="text-start">{{ remb.modePaiement || '-' }}</td>
+                <td class="text-start">{{ remb.receptionNumBon || '-' }}</td>
+                <td class="text-center">
+                  <div class="actions-cell">
+                    <button (click)="deleteRemboursement(remb.id)" class="action-btn danger" title="Supprimer">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="11">
+                  <div class="empty-state">
+                    <span class="material-symbols-outlined">sentiment_dissatisfied</span>
+                    <p>Aucun remboursement trouve</p>
+                    @if (searchTerm() || selectedAcheteurId()) {
+                      <p class="empty-hint">Essayez de modifier vos criteres de recherche</p>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      @if (filteredRemboursements.length > 0) {
+        <div class="pagination-container">
+          <div class="pagination-info">
+            <span>
+              Affichage de
+              <strong>{{ (currentPage() - 1) * itemsPerPage() + 1 }}</strong>
+              a
+              <strong>{{ Math.min(currentPage() * itemsPerPage(), filteredRemboursements.length) }}</strong>
+              sur
+              <strong>{{ filteredRemboursements.length }}</strong>
+              remboursements
+            </span>
+            <div class="page-size-selector">
+              <label for="pageSizeRemboursements">Lignes par page :</label>
+              <select id="pageSizeRemboursements" [ngModel]="itemsPerPage()" (ngModelChange)="itemsPerPage.set($event); onPageSizeChange()">
+                <option [value]="5">5</option>
+                <option [value]="10">10</option>
+                <option [value]="25">25</option>
+                <option [value]="50">50</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pagination-controls">
+            <button class="pagination-btn"
+                    (click)="previousPage()"
+                    [disabled]="currentPage() === 1"
+                    [class.disabled]="currentPage() === 1">
+              <span class="material-symbols-outlined">chevron_left</span>
+              <span>Precedent</span>
+            </button>
+
+            <div class="page-numbers">
+              @if (totalPages > 1) {
+                <button class="page-number" [class.active]="currentPage() === 1" (click)="goToPage(1)">
+                  1
+                </button>
+              }
+
+              @if (currentPage() > 3) {
+                <span class="ellipsis">…</span>
+              }
+
+              @for (page of getVisiblePages(); track page) {
+                <button class="page-number" [class.active]="currentPage() === page" (click)="goToPage(page)">
+                  {{ page }}
+                </button>
+              }
+
+              @if (currentPage() < totalPages - 2) {
+                <span class="ellipsis">…</span>
+              }
+
+              @if (totalPages > 1) {
+                <button class="page-number" [class.active]="currentPage() === totalPages" (click)="goToPage(totalPages)">
+                  {{ totalPages }}
+                </button>
+              }
+            </div>
+
+            <button class="pagination-btn"
+                    (click)="nextPage()"
+                    [disabled]="currentPage() === totalPages"
+                    [class.disabled]="currentPage() === totalPages">
+              <span>Suivant</span>
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

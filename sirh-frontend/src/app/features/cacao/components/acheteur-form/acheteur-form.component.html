@@ -1,0 +1,119 @@
+<!-- src/app/features/cacao/components/acheteur-form/acheteur-form.component.html -->
+
+<div class="unity-container">
+  <div class="page-header-glass">
+    <div class="page-title">
+      <div class="title-icon">
+        <span class="material-symbols-outlined">person_add</span>
+      </div>
+      <div>
+        <h1>{{ isEditMode() ? 'Modifier l\'acheteur' : 'Nouvel acheteur / collecteur' }}</h1>
+        <p>{{ isEditMode() ? 'Mise a jour des informations' : 'Ajout d\'un nouvel acheteur pour la collecte de cacao' }}</p>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-secondary" (click)="goBack()">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Retour
+      </button>
+    </div>
+  </div>
+
+  <!-- MESSAGE DE SUCCES -->
+  @if (successMessage()) {
+    <div class="alert alert-success">{{ successMessage() }}</div>
+  }
+
+  <!-- MESSAGE D'ERREUR -->
+  @if (error()) {
+    <div class="alert alert-danger">{{ error() }}</div>
+  }
+
+  <div class="form-card">
+    <form (ngSubmit)="onSubmit()" #form="ngForm">
+      <div class="form-block">
+        <div class="block-title">
+          <span class="material-symbols-outlined">person</span>
+          Selection de l'employe
+        </div>
+        <p class="hint">L'acheteur doit etre un employe existant dans le systeme.</p>
+
+        <div class="form-group">
+          <label>Employe *</label>
+          <div class="select-wrapper">
+            <select
+              class="form-control"
+              [ngModel]="acheteur().employeeId"
+              (ngModelChange)="onEmployeeSelect($event)"
+              name="employeeId"
+              required
+              [disabled]="loadingEmployees()">
+              <option value="">-- Selectionner un employe --</option>
+              @for (emp of employees(); track emp.id) {
+                <option 
+                  [value]="emp.id"
+                  [disabled]="!isEmployeeSelectable(emp.id || '')">
+                  {{ getEmployeeDisplayName(emp) }}{{ getEmployeeStatusBadge(emp.id || '') }}
+                </option>
+              }
+            </select>
+            <span class="material-symbols-outlined select-arrow">expand_more</span>
+          </div>
+          @if (loadingEmployees()) {
+            <div class="loading-hint">Chargement des employes...</div>
+          }
+          @if (!loadingEmployees() && employees().length === 0) {
+            <small class="form-help">Aucun employe disponible. Veuillez d'abord creer un employe.</small>
+          }
+          @if (acheteur().employeeId) {
+            <div class="employee-status" [class]="getEmployeeStatusClass(acheteur().employeeId)">
+              <span class="material-symbols-outlined status-icon">
+                {{ isEmployeeActiveAcheteur(acheteur().employeeId) ? 'check_circle' : 
+                   isEmployeeSuspendedAcheteur(acheteur().employeeId) ? 'warning' : 'info' }}
+              </span>
+              {{ getEmployeeStatus(acheteur().employeeId) }}
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="form-block">
+        <div class="block-title">
+          <span class="material-symbols-outlined">location_on</span>
+          Informations de collecte
+        </div>
+
+        <div class="form-group">
+          <label>Zone de collecte</label>
+          <input
+            type="text"
+            class="form-control"
+            [ngModel]="acheteur().zoneCollecte"
+            (ngModelChange)="acheteur.set({ ...acheteur(), zoneCollecte: $event })"
+            name="zoneCollecte"
+            placeholder="Ex: Centre, Nord, Sud-Est..."
+          />
+          <small class="form-help">Zone geographique ou l'acheteur effectue ses collectes</small>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="form.invalid || loading() || !acheteur().employeeId || isEmployeeActiveAcheteur(acheteur().employeeId)">
+          @if (!loading()) {
+            <span class="material-symbols-outlined">
+              {{ isReactivating() ? 'restart_alt' : 'check_circle' }}
+            </span>
+          }
+          @if (loading()) {
+            <span class="spinner-sm"></span>
+          }
+          {{ loading() ? 'Enregistrement...' : (isReactivating() ? 'Reactivar l\'acheteur' : (isEditMode() ? 'Mettre a jour' : 'Creer l\'acheteur')) }}
+        </button>
+        <button type="button" class="btn btn-ghost" (click)="goBack()">Annuler</button>
+      </div>
+    </form>
+  </div>
+</div>

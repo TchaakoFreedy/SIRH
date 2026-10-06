@@ -1,0 +1,268 @@
+<!-- src/app/features/cacao/components/acheteur-list/acheteur-list.component.html -->
+
+<div class="unity-container">
+
+  <!-- HEADER -->
+  <div class="page-header-glass">
+    <div class="page-title">
+      <div class="title-icon">
+        <span class="material-symbols-outlined">agriculture</span>
+      </div>
+      <div>
+        <h1>Gestion des Acheteurs / Collecteurs</h1>
+        <p>Suivi des avances, réceptions de cacao et soldes</p>
+      </div>
+    </div>
+    <div class="btn-group">
+      <a routerLink="new" class="btn btn-primary">
+        <span class="material-symbols-outlined">person_add</span>
+        Nouvel acheteur
+      </a>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card primary">
+      <div class="stat-icon"><span class="material-symbols-outlined">groups</span></div>
+      <div class="stat-info">
+        <p>Acheteurs actifs</p>
+        <h3>{{ acheteurs().filter(a => a.statut === 'ACTIF').length }}</h3>
+      </div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon"><span class="material-symbols-outlined">payments</span></div>
+      <div class="stat-info">
+        <p>Total des avances</p>
+        <h3>{{ acheteurs().reduce((sum, a) => sum + (a.totalAvances || 0), 0) | number:'1.2-2' }} FCFA</h3>
+      </div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-icon"><span class="material-symbols-outlined">inventory_2</span></div>
+      <div class="stat-info">
+        <p>Total valeur livrée</p>
+        <h3>{{ acheteurs().reduce((sum, a) => sum + (a.totalValeurLivree || 0), 0) | number:'1.2-2' }} FCFA</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECHERCHE & FILTRES -->
+  <div class="search-filter-bar">
+    <div class="search-wrapper">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input
+        type="text"
+        class="search-input"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event); currentPage.set(1)"
+        placeholder="Rechercher par nom, téléphone, zone..."
+        autocomplete="off"
+      />
+      @if (searchTerm()) {
+        <button class="clear-search" (click)="clearSearch()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      }
+    </div>
+
+    <div class="filter-wrapper">
+      <span class="material-symbols-outlined filter-icon">filter_list</span>
+      <select class="filter-select" [ngModel]="selectedZone()" (ngModelChange)="selectedZone.set($event); currentPage.set(1)">
+        <option value="">Toutes les zones</option>
+        @for (zone of zones(); track zone) {
+          <option [value]="zone">{{ zone }}</option>
+        }
+      </select>
+      <span class="material-symbols-outlined select-arrow">expand_more</span>
+      @if (selectedZone()) {
+        <button class="clear-filter" (click)="clearFilter()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      }
+    </div>
+
+    <div class="filter-results">
+      <span class="result-count">
+        <span class="material-symbols-outlined">people</span>
+        {{ filteredAcheteurs().length }} acheteur(s)
+      </span>
+      @if (searchTerm() || selectedZone()) {
+        <button class="btn-reset-filters" (click)="resetFilters()">
+          <span class="material-symbols-outlined">refresh</span>
+          Réinitialiser
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ÉTAT DE CHARGEMENT -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-container">
+        <span class="material-symbols-outlined spin">autorenew</span>
+        <p>Chargement des acheteurs...</p>
+      </div>
+    </div>
+  }
+
+  <!-- ÉTAT D'ERREUR -->
+  @if (error() && !loading()) {
+    <div class="error-state">
+      <span class="material-symbols-outlined">error_outline</span>
+      <p>{{ error() }}</p>
+      <button class="btn-retry" (click)="loadAcheteurs()">
+        <span class="material-symbols-outlined">refresh</span>
+        Réessayer
+      </button>
+    </div>
+  }
+
+  <!-- TABLEAU -->
+  @if (!loading() && !error()) {
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">
+          <span class="material-symbols-outlined">group</span>
+          <h2>Liste des acheteurs</h2>
+        </div>
+        <div class="table-actions">
+          <span class="table-info">{{ paginatedAcheteurs().length }} sur {{ filteredAcheteurs().length }} acheteurs</span>
+        </div>
+      </div>
+
+      <div class="responsive-wrapper">
+        <table class="up-table">
+          <thead>
+            <tr>
+              <th class="text-start">Acheteur</th>
+              <th class="text-start">Téléphone</th>
+              <th class="text-start">Zone collecte</th>
+              <th class="text-end">Total Avances (FCFA)</th>
+              <th class="text-end">Total Valeur Livrée (FCFA)</th>
+              <th class="text-end">Solde (FCFA)</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (acheteur of paginatedAcheteurs(); track acheteur.id) {
+              <tr>
+                <td class="text-start">
+                  <div class="user-cell">
+                    <div class="avatar">{{ acheteur.nomComplet?.[0] || '?' }}</div>
+                    <div>
+                      <div class="name">{{ acheteur.nomComplet }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-start">{{ acheteur.telephone || '-' }}</td>
+                <td class="text-start">{{ acheteur.zoneCollecte || '-' }}</td>
+                <td class="text-end">{{ (acheteur.totalAvances || 0) | number:'1.2-2' }}</td>
+                <td class="text-end">{{ (acheteur.totalValeurLivree || 0) | number:'1.2-2' }}</td>
+                <td class="text-end fw-bold" [class.text-danger]="(acheteur.solde || 0) > 0" [class.text-success]="(acheteur.solde || 0) < 0" [class.text-warning]="(acheteur.solde || 0) === 0">
+                  {{ (acheteur.solde || 0) | number:'1.2-2' }}
+                </td>
+                <td class="text-center">
+                  <div class="actions-cell">
+                    <a [routerLink]="[acheteur.id, 'detail']" class="action-btn info" title="Voir détails">
+                      <span class="material-symbols-outlined">visibility</span>
+                    </a>
+                    <a [routerLink]="[acheteur.id, 'edit']" class="action-btn warning" title="Modifier">
+                      <span class="material-symbols-outlined">edit</span>
+                    </a>
+                    <button (click)="deleteAcheteur(acheteur.id)" class="action-btn danger" title="Désactiver">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state">
+                    <span class="material-symbols-outlined">sentiment_dissatisfied</span>
+                    <p>Aucun acheteur trouvé</p>
+                    @if (searchTerm() || selectedZone()) {
+                      <p class="empty-hint">Essayez de modifier vos critères de recherche</p>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      @if (filteredAcheteurs().length > 0) {
+        <div class="pagination-container">
+          <div class="pagination-info">
+            <span>
+              Affichage de
+              <strong>{{ (currentPage() - 1) * itemsPerPage() + 1 }}</strong>
+              à
+              <strong>{{ Math.min(currentPage() * itemsPerPage(), filteredAcheteurs().length) }}</strong>
+              sur
+              <strong>{{ filteredAcheteurs().length }}</strong>
+              acheteurs
+            </span>
+            <div class="page-size-selector">
+              <label for="pageSizeAcheteurs">Lignes par page :</label>
+              <select id="pageSizeAcheteurs" [ngModel]="itemsPerPage()" (ngModelChange)="itemsPerPage.set($event); onPageSizeChange()">
+                <option [value]="5">5</option>
+                <option [value]="10">10</option>
+                <option [value]="25">25</option>
+                <option [value]="50">50</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pagination-controls">
+            <button class="pagination-btn"
+                    (click)="previousPage()"
+                    [disabled]="currentPage() === 1"
+                    [class.disabled]="currentPage() === 1">
+              <span class="material-symbols-outlined">chevron_left</span>
+              <span>Précédent</span>
+            </button>
+
+            <div class="page-numbers">
+              @if (totalPages() > 1) {
+                <button class="page-number" [class.active]="currentPage() === 1" (click)="goToPage(1)">
+                  1
+                </button>
+              }
+
+              @if (currentPage() > 3) {
+                <span class="ellipsis">…</span>
+              }
+
+              @for (page of getVisiblePages(); track page) {
+                <button class="page-number" [class.active]="currentPage() === page" (click)="goToPage(page)">
+                  {{ page }}
+                </button>
+              }
+
+              @if (currentPage() < totalPages() - 2) {
+                <span class="ellipsis">…</span>
+              }
+
+              @if (totalPages() > 1) {
+                <button class="page-number" [class.active]="currentPage() === totalPages()" (click)="goToPage(totalPages())">
+                  {{ totalPages() }}
+                </button>
+              }
+            </div>
+
+            <button class="pagination-btn"
+                    (click)="nextPage()"
+                    [disabled]="currentPage() === totalPages()"
+                    [class.disabled]="currentPage() === totalPages()">
+              <span>Suivant</span>
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

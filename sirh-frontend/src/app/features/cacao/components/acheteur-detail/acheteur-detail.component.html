@@ -1,0 +1,413 @@
+<!-- src/app/features/cacao/components/acheteur-detail/acheteur-detail.component.html -->
+
+<div class="unity-container">
+  <div class="page-header-glass">
+    <div class="page-title">
+      <div class="title-icon">
+        <span class="material-symbols-outlined">person</span>
+      </div>
+      <div>
+        <h1>{{ acheteur()?.nomComplet || 'Detail acheteur' }}</h1>
+        <p>Zone de collecte: {{ acheteur()?.zoneCollecte || '-' }} • Statut: <span class="status-pill" [class.active]="acheteur()?.statut === 'ACTIF'">{{ acheteur()?.statut || 'Inactif' }}</span></p>
+      </div>
+    </div>
+    <div class="btn-group">
+      <div class="export-dropdown">
+        <button class="btn btn-primary" (click)="exportAll()" [disabled]="avances().length === 0 && receptions().length === 0 && remboursements().length === 0">
+          <span class="material-symbols-outlined">download</span>
+          Tout exporter
+        </button>
+        <div class="dropdown-menu">
+          <button (click)="exportAvances()" [disabled]="avances().length === 0">
+            <span class="material-symbols-outlined">payments</span>
+            Avances
+          </button>
+          <button (click)="exportReceptions()" [disabled]="receptions().length === 0">
+            <span class="material-symbols-outlined">inventory_2</span>
+            Receptions
+          </button>
+          <button (click)="exportRemboursements()" [disabled]="remboursements().length === 0">
+            <span class="material-symbols-outlined">payments</span>
+            Remboursements
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-secondary" (click)="goBack()">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Retour
+      </button>
+    </div>
+  </div>
+
+  <!-- ERREUR -->
+  @if (error()) {
+    <div class="alert alert-danger">{{ error() }}</div>
+  }
+
+  <!-- CHARGEMENT -->
+  @if (loading()) {
+    <div class="text-center py-4">
+      <div class="spinner-border text-primary" role="status"></div>
+    </div>
+  }
+
+  <!-- CONTENU -->
+  @if (!loading() && acheteur()) {
+    <!-- Solde -->
+    <div class="solde-card">
+      <div class="solde-grid">
+        <div class="solde-item">
+          <span class="solde-label">Total avances</span>
+          <span class="solde-value primary">{{ (acheteur()?.totalAvances || 0) | number:'1.2-2' }} FCFA</span>
+        </div>
+        <div class="solde-item">
+          <span class="solde-label">Total valeur livree</span>
+          <span class="solde-value success">{{ (acheteur()?.totalValeurLivree || 0) | number:'1.2-2' }} FCFA</span>
+        </div>
+        <div class="solde-item">
+          <span class="solde-label">Total remboursements</span>
+          <span class="solde-value primary">{{ getTotalRemboursements() | number:'1.2-2' }} FCFA</span>
+        </div>
+        <div class="solde-item">
+          <span class="solde-label">Solde</span>
+          <span class="solde-value" [class.text-danger]="(acheteur()?.solde || 0) > 0" [class.text-success]="(acheteur()?.solde || 0) < 0" [class.text-warning]="(acheteur()?.solde || 0) === 0">
+            {{ (acheteur()?.solde || 0) | number:'1.2-2' }} FCFA
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Avances -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">
+          <span class="material-symbols-outlined">payments</span>
+          <h2>Avances financieres</h2>
+          <span class="badge-count">{{ avances().length }}</span>
+        </div>
+        <div class="table-actions">
+          <button class="btn btn-sm btn-outline-primary" (click)="exportAvances()" [disabled]="avances().length === 0">
+            <span class="material-symbols-outlined">file_download</span>
+            Exporter
+          </button>
+          <button class="btn btn-sm btn-primary" (click)="toggleAvanceForm()">
+            <span class="material-symbols-outlined">{{ showAvanceForm() ? 'remove' : 'add' }}</span>
+            {{ showAvanceForm() ? 'Fermer' : 'Ajouter une avance' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulaire avance -->
+      @if (showAvanceForm()) {
+        <div class="form-container">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Quantite (kg) *</label>
+              <input type="number" class="form-control" [ngModel]="newAvance.quantiteKg" (ngModelChange)="newAvance.quantiteKg = $event; newAvance.montant = newAvance.quantiteKg * newAvance.prixUnitaire" step="0.001" min="0.001" placeholder="Ex: 100.5">
+            </div>
+            <div class="form-group">
+              <label>Prix unitaire (FCFA) *</label>
+              <input type="number" class="form-control" [ngModel]="newAvance.prixUnitaire" (ngModelChange)="newAvance.prixUnitaire = $event; newAvance.montant = newAvance.quantiteKg * newAvance.prixUnitaire" step="0.01" min="0.01" placeholder="Ex: 1500">
+            </div>
+            <div class="form-group">
+              <label>Montant calcule (FCFA)</label>
+              <input type="text" class="form-control" [value]="(newAvance.quantiteKg * newAvance.prixUnitaire) | number:'1.2-2'" disabled>
+            </div>
+            <div class="form-group">
+              <label>Motif</label>
+              <input type="text" class="form-control" [ngModel]="newAvance.motif" (ngModelChange)="newAvance.motif = $event" placeholder="Facultatif">
+            </div>
+            <div class="form-group">
+              <label>Mode de paiement</label>
+              <select class="form-control" [ngModel]="newAvance.modePaiement" (ngModelChange)="newAvance.modePaiement = $event">
+                <option value="">Selectionner</option>
+                <option value="ESPECES">Especes</option>
+                <option value="VIREMENT">Virement</option>
+                <option value="CHEQUE">Cheque</option>
+                <option value="MOBILE_MONEY">Mobile Money</option>
+              </select>
+            </div>
+            <div class="form-group form-actions">
+              <button class="btn btn-success" (click)="addAvance()" [disabled]="newAvance.quantiteKg <= 0 || newAvance.prixUnitaire <= 0">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="responsive-wrapper">
+        <table class="up-table">
+          <thead>
+            <tr>
+              <th class="text-start">Date</th>
+              <th class="text-end">Quantite (KG)</th>
+              <th class="text-end">Prix Unitaire (FCFA)</th>
+              <th class="text-end">Montant (FCFA)</th>
+              <th class="text-start">Motif</th>
+              <th class="text-start">Mode Paiement</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (avance of avances(); track avance.id) {
+              <tr>
+                <td class="text-start">{{ avance.dateAvance | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="text-end">{{ avance.quantiteKg | number:'1.3-3' }}</td>
+                <td class="text-end">{{ avance.prixUnitaire | number:'1.2-2' }}</td>
+                <td class="text-end">{{ avance.montant | number:'1.2-2' }}</td>
+                <td class="text-start">{{ avance.motif || '-' }}</td>
+                <td class="text-start">{{ avance.modePaiement || '-' }}</td>
+                <td class="text-center">
+                  <button class="action-btn danger" (click)="deleteAvance(avance.id)">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="text-center py-3">Aucune avance enregistree</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Receptions -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">
+          <span class="material-symbols-outlined">inventory_2</span>
+          <h2>Receptions de cacao</h2>
+          <span class="badge-count">{{ receptions().length }}</span>
+        </div>
+        <div class="table-actions">
+          <button class="btn btn-sm btn-outline-primary" (click)="exportReceptions()" [disabled]="receptions().length === 0">
+            <span class="material-symbols-outlined">file_download</span>
+            Exporter
+          </button>
+          <button class="btn btn-sm btn-success" (click)="toggleReceptionForm()">
+            <span class="material-symbols-outlined">{{ showReceptionForm() ? 'remove' : 'add' }}</span>
+            {{ showReceptionForm() ? 'Fermer' : 'Nouvelle reception' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulaire reception -->
+      @if (showReceptionForm()) {
+        <div class="form-container">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Quantite (kg) *</label>
+              <input type="number" class="form-control" [ngModel]="newReception.quantiteKg" (ngModelChange)="newReception.quantiteKg = $event" step="0.001" min="0.001" placeholder="Ex: 100.5">
+            </div>
+            <div class="form-group">
+              <label>Refraction (kg)</label>
+              <input type="number" class="form-control" [ngModel]="newReception.quantiteRefractee" (ngModelChange)="newReception.quantiteRefractee = $event" step="0.001" min="0" placeholder="Ex: 2.5">
+            </div>
+            <div class="form-group">
+              <label>Net (kg) (auto)</label>
+              <input type="text" class="form-control" [value]="(newReception.quantiteKg - (newReception.quantiteRefractee || 0)) | number:'1.3-3'" disabled>
+            </div>
+            <div class="form-group">
+              <label>Motif refraction</label>
+              <input type="text" class="form-control" [ngModel]="newReception.motifRefraction" (ngModelChange)="newReception.motifRefraction = $event" placeholder="Ex: Humide, Mauvaise qualite...">
+            </div>
+            <div class="form-group">
+              <label>Prix unitaire (FCFA) *</label>
+              <input type="number" class="form-control" [ngModel]="newReception.prixUnitaire" (ngModelChange)="newReception.prixUnitaire = $event" step="0.01" min="0.01" placeholder="Ex: 1500">
+            </div>
+            <div class="form-group">
+              <label>Qualite</label>
+              <select class="form-control" [ngModel]="newReception.qualite" (ngModelChange)="newReception.qualite = $event">
+                <option value="">Selectionner</option>
+                <option value="PREMIUM">Premium</option>
+                <option value="STANDARD">Standard</option>
+                <option value="BASE">Base</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>N° Bon de reception</label>
+              <input type="text" class="form-control" [ngModel]="newReception.numBonReception" (ngModelChange)="newReception.numBonReception = $event" placeholder="Ex: BR-2024-001">
+            </div>
+            <div class="form-group form-actions" style="grid-column: span 2;">
+              <button class="btn btn-success" (click)="addReception()" [disabled]="newReception.quantiteKg <= 0 || newReception.prixUnitaire <= 0">Enregistrer</button>
+            </div>
+          </div>
+          <div class="form-row" style="margin-top: 8px;">
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Observations</label>
+              <input type="text" class="form-control" [ngModel]="newReception.observations" (ngModelChange)="newReception.observations = $event" placeholder="Informations complementaires...">
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="responsive-wrapper">
+        <table class="up-table">
+          <thead>
+            <tr>
+              <th class="text-start">Date</th>
+              <th class="text-end">Quantite (KG)</th>
+              <th class="text-end">Refraction (KG)</th>
+              <th class="text-end">Net (KG)</th>
+              <th class="text-end">Prix Unitaire (FCFA)</th>
+              <th class="text-end">Valeur (FCFA)</th>
+              <th class="text-start">Qualite</th>
+              <th class="text-start">N° Bon</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (rec of receptions(); track rec.id) {
+              <tr>
+                <td class="text-start">{{ rec.dateReception | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="text-end">{{ rec.quantiteKg | number:'1.3-3' }}</td>
+                <td class="text-end">
+                  @if (rec.quantiteRefractee && rec.quantiteRefractee > 0) {
+                    <span class="refraction-badge" title="{{ rec.motifRefraction }}">
+                      {{ rec.quantiteRefractee | number:'1.3-3' }}
+                    </span>
+                  } @else {
+                    <span class="text-muted">-</span>
+                  }
+                </td>
+                <td class="text-end fw-bold">{{ rec.quantiteNet | number:'1.3-3' }}</td>
+                <td class="text-end">{{ rec.prixUnitaire | number:'1.2-2' }}</td>
+                <td class="text-end">{{ rec.valeurLivree | number:'1.2-2' }}</td>
+                <td class="text-start">{{ rec.qualite || '-' }}</td>
+                <td class="text-start">{{ rec.numBonReception || '-' }}</td>
+                <td class="text-center">
+                  <button class="action-btn danger" (click)="deleteReception(rec.id)" [disabled]="!!rec.remboursementId">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="text-center py-3">Aucune reception enregistree</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Remboursements -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">
+          <span class="material-symbols-outlined">payments</span>
+          <h2>Remboursements</h2>
+          <span class="badge-count">{{ remboursements().length }}</span>
+        </div>
+        <div class="table-actions">
+          <button class="btn btn-sm btn-outline-primary" (click)="exportRemboursements()" [disabled]="remboursements().length === 0">
+            <span class="material-symbols-outlined">file_download</span>
+            Exporter
+          </button>
+          <button class="btn btn-sm btn-primary" (click)="toggleRemboursementForm()">
+            <span class="material-symbols-outlined">{{ showRemboursementForm() ? 'remove' : 'add' }}</span>
+            {{ showRemboursementForm() ? 'Fermer' : 'Nouveau remboursement' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulaire remboursement -->
+      @if (showRemboursementForm()) {
+        <div class="form-container">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Reception *</label>
+              <select class="form-control" [ngModel]="newRemboursement.receptionId" (ngModelChange)="newRemboursement.receptionId = $event; onReceptionSelect($event)">
+                <option value="">Selectionner une reception</option>
+                @for (rec of receptionsNonRemboursees(); track rec.id) {
+                  <option [value]="rec.id">Bon: {{ rec.numBonReception || rec.id }} - Net: {{ rec.quantiteNet | number:'1.3-3' }} kg</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quantite recue (kg) (auto)</label>
+              <input type="text" class="form-control" [value]="newRemboursement.quantiteRecue | number:'1.3-3'" disabled>
+            </div>
+            <div class="form-group">
+              <label>Quantite attendue (kg) *</label>
+              <input type="number" class="form-control" [ngModel]="newRemboursement.quantiteAttendue" (ngModelChange)="newRemboursement.quantiteAttendue = $event; calculateRemboursement()" step="0.001" min="0.001" placeholder="Ex: 95">
+            </div>
+            <div class="form-group">
+              <label>Surplus (kg) (auto)</label>
+              <input type="text" class="form-control" [value]="newRemboursement.quantiteSurplus | number:'1.3-3'" disabled>
+            </div>
+            <div class="form-group">
+              <label>Prix unitaire (FCFA) (auto)</label>
+              <input type="text" class="form-control" [value]="newRemboursement.prixUnitaire | number:'1.2-2'" disabled>
+            </div>
+            <div class="form-group">
+              <label>Montant rembourse (FCFA) (auto)</label>
+              <input type="text" class="form-control" [value]="newRemboursement.montantRembourse | number:'1.2-2'" disabled>
+            </div>
+            <div class="form-group">
+              <label>Motif</label>
+              <input type="text" class="form-control" [ngModel]="newRemboursement.motifRemboursement" (ngModelChange)="newRemboursement.motifRemboursement = $event" placeholder="Ex: Surplus de livraison">
+            </div>
+            <div class="form-group">
+              <label>Mode de paiement</label>
+              <select class="form-control" [ngModel]="newRemboursement.modePaiement" (ngModelChange)="newRemboursement.modePaiement = $event">
+                <option value="">Selectionner</option>
+                <option value="ESPECES">Especes</option>
+                <option value="VIREMENT">Virement</option>
+                <option value="CHEQUE">Cheque</option>
+                <option value="MOBILE_MONEY">Mobile Money</option>
+              </select>
+            </div>
+            <div class="form-group form-actions">
+              <button class="btn btn-success" (click)="addRemboursement()" [disabled]="!newRemboursement.receptionId || newRemboursement.quantiteAttendue <= 0 || newRemboursement.quantiteSurplus <= 0">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="responsive-wrapper">
+        <table class="up-table">
+          <thead>
+            <tr>
+              <th class="text-start">Date</th>
+              <th class="text-end">Quantite Recue (KG)</th>
+              <th class="text-end">Quantite Attendue (KG)</th>
+              <th class="text-end">Surplus (KG)</th>
+              <th class="text-end">Prix Unitaire (FCFA)</th>
+              <th class="text-end">Montant (FCFA)</th>
+              <th class="text-start">Motif</th>
+              <th class="text-start">Mode Paiement</th>
+              <th class="text-start">N° Bon</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (remb of remboursements(); track remb.id) {
+              <tr>
+                <td class="text-start">{{ remb.dateRemboursement | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="text-end">{{ remb.quantiteRecue | number:'1.3-3' }}</td>
+                <td class="text-end">{{ remb.quantiteAttendue | number:'1.3-3' }}</td>
+                <td class="text-end fw-bold text-success">{{ remb.quantiteSurplus | number:'1.3-3' }}</td>
+                <td class="text-end">{{ remb.prixUnitaire | number:'1.2-2' }}</td>
+                <td class="text-end">{{ remb.montantRembourse | number:'1.2-2' }}</td>
+                <td class="text-start">{{ remb.motifRemboursement || '-' }}</td>
+                <td class="text-start">{{ remb.modePaiement || '-' }}</td>
+                <td class="text-start">{{ remb.receptionNumBon || '-' }}</td>
+                <td class="text-center">
+                  <button class="action-btn danger" (click)="deleteRemboursement(remb.id)">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="10" class="text-center py-3">Aucun remboursement enregistre</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

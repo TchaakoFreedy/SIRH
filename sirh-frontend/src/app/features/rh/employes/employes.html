@@ -1,0 +1,1605 @@
+<!-- src/app/features/rh/employes/employes.html -->
+<!-- Version complète avec mise en évidence des employés dont le contrat expire -->
+
+<div class="unity-container">
+  
+  <!-- ==================== HEADER ==================== -->
+  <div class="page-header-glass">
+    <div class="page-title">
+      <div class="title-icon">
+        <span class="material-symbols-outlined">groups</span>
+      </div>
+      <div>
+        <h1>Gestion des Employés</h1>
+        <p>Recrutement, contrats & pièces justificatives</p>
+      </div>
+    </div>
+    <div class="btn-group">
+      @if (canCreateAvenant() || canUpdateEmployee()) {
+        <button class="btn btn-secondary" (click)="openContratModal()">
+          <span class="material-symbols-outlined">contract</span> Contrat
+        </button>
+      }
+      @if (canCreateEmployee()) {
+        <button class="btn btn-primary" (click)="openEmployeeModal()">
+          <span class="material-symbols-outlined">person_add</span> Nouveau
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ==================== STATS ==================== -->
+  <div class="stats-grid">
+    <div class="stat-card blue">
+      <div class="stat-icon"><span class="material-symbols-outlined">badge</span></div>
+      <div class="stat-info">
+        <p>Effectif Total</p>
+        <h3>{{ filteredEmployees().length }}</h3>
+      </div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-icon"><span class="material-symbols-outlined">description</span></div>
+      <div class="stat-info">
+        <p>Contrats Actifs</p>
+        <h3>{{ contrats().length }}</h3>
+      </div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-icon"><span class="material-symbols-outlined">corporate_fare</span></div>
+      <div class="stat-info">
+        <p>Départements</p>
+        <h3>{{ departements().length }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== RECHERCHE & FILTRES ==================== -->
+  <div class="search-filter-bar">
+    <div class="search-wrapper">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input 
+        type="text" 
+        class="search-input" 
+        [(ngModel)]="searchTerm" 
+        (input)="applyFilters()"
+        placeholder=" Rechercher par matricule, nom, prénom, poste, département, téléphone ou email..."
+        autocomplete="off"
+      />
+      <button class="clear-search" *ngIf="searchTerm()" (click)="clearSearch()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="filter-wrapper">
+      <span class="material-symbols-outlined filter-icon">filter_list</span>
+      <select class="filter-select" [(ngModel)]="selectedDepartement" (change)="applyFilters()">
+        <option value="">Tous les départements</option>
+        @for (dept of departements(); track dept.id) {
+          <option [value]="dept.id">{{ dept.name }}</option>
+        }
+      </select>
+      @if (selectedDepartement()) {
+        <button class="clear-filter" (click)="clearFilter()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      }
+    </div>
+
+    <div class="filter-results">
+      <span class="result-count">
+        <span class="material-symbols-outlined">people</span>
+        {{ filteredEmployees().length }} collaborateur(s)
+      </span>
+      @if (searchTerm() || selectedDepartement()) {
+        <button class="btn-reset-filters" (click)="resetFilters()">
+          <span class="material-symbols-outlined">refresh</span>
+          Réinitialiser
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ==================== TABLEAU ==================== -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">
+        <span class="material-symbols-outlined">group</span>
+        <h2>Registre du Personnel</h2>
+      </div>
+      <div class="table-actions">
+        <span class="table-info">{{ filteredEmployees().length }} sur {{ employees().length }} employés</span>
+      </div>
+    </div>
+
+    <div class="responsive-wrapper">
+      <table class="up-table">
+        <thead>
+          <tr>
+            <th>Matricule</th>
+            <th>Collaborateur</th>
+            <th>Poste & Département</th>
+            <th>Contact</th>
+            <th>Statut</th>
+            <th class="th-center">2FA</th>
+            <th class="th-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (emp of paginatedEmployees(); track emp.id) {
+            <tr [class.expiring-row]="isEmployeeContractExpiring(emp.id)">
+              <td><span class="tag-matricule">{{ emp.matriculeInterne }}</span></td>
+              <td>
+                <div class="user-cell">
+                  <div>
+                    <div class="name">{{ emp.prenom }} {{ emp.nom }}</div>
+                    <div class="meta">{{ emp.sexe === 'M' ? 'Masculin' : 'Féminin' }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="name">{{ emp.posteName }}</div>
+                <div class="meta">{{ emp.departementName }}</div>
+              </td>
+              <td>
+                <div class="name" style="font-size:13px;">{{ emp.user?.email || emp.email || '—' }}</div>
+                <div class="meta">✆ {{ emp.telephone }}</div>
+              </td>
+              <td>
+                <span class="status-pill" [class.active]="emp.statut === 'ACTIF'" [class.suspended]="emp.statut !== 'ACTIF'">
+                  {{ emp.statut }}
+                </span>
+              </td>
+              <!-- Bouton 2FA -->
+              <td class="th-center">
+                @if (canManage2FA()) {
+                  <button 
+                    (click)="open2FAModal(emp)" 
+                    class="action-btn twofa-btn" 
+                    [class.active]="twoFactorStatus()[emp.id] === true"
+                    [class.inactive]="twoFactorStatus()[emp.id] === false || !twoFactorStatus()[emp.id]"
+                    [disabled]="isToggling2FA()[emp.id]"
+                    title="{{ twoFactorStatus()[emp.id] ? '2FA activé - Cliquez pour gérer' : '2FA désactivé - Cliquez pour activer' }}">
+                    <span class="material-symbols-outlined">
+                      @if (isToggling2FA()[emp.id]) {
+                        progress_activity
+                      } @else if (twoFactorStatus()[emp.id]) {
+                        shield
+                      } @else {
+                        shield
+                      }
+                    </span>
+                    <span class="status-text">
+                      @if (isToggling2FA()[emp.id]) {
+                        ...
+                      } @else if (twoFactorStatus()[emp.id]) {
+                        Activé
+                      } @else {
+                        Désactivé
+                      }
+                    </span>
+                  </button>
+                } @else {
+                  <span class="no-2fa">—</span>
+                }
+              </td>
+              <td>
+                <div class="actions-cell">
+                  @if (canViewAllEmployees() || canViewEmployee()) {
+                    <button (click)="viewEmployeeDetails(emp.id)" class="action-btn info" title="Dossier">
+                      <span class="material-symbols-outlined">folder_shared</span>
+                    </button>
+                  }
+                  @if (canUpdateEmployee()) {
+                    <button (click)="openEmployeeModal(emp)" class="action-btn warning" title="Modifier">
+                      <span class="material-symbols-outlined">edit</span>
+                    </button>
+                  }
+                  @if (canUploadDocuments()) {
+                    <button (click)="openDocModal(emp.id)" class="action-btn primary" title="Document">
+                      <span class="material-symbols-outlined">cloud_upload</span>
+                    </button>
+                  }
+                  @if (emp.statut === 'ACTIF' && canSuspendEmployee()) {
+                    <button (click)="suspendEmployee(emp.id)" class="action-btn danger" title="Suspendre">
+                      <span class="material-symbols-outlined">person_off</span>
+                    </button>
+                  }
+                  @if (emp.statut !== 'ACTIF' && canReactivateEmployee()) {
+                    <button (click)="reactivateEmployee(emp.id)" class="action-btn success" title="Réactiver">
+                      <span class="material-symbols-outlined">how_to_reg</span>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <span class="material-symbols-outlined">sentiment_dissatisfied</span>
+                  <p>Aucun collaborateur trouvé</p>
+                  @if (searchTerm() || selectedDepartement()) {
+                    <p class="empty-hint">Essayez de modifier vos critères de recherche</p>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ==================== PAGINATION ==================== -->
+    @if (filteredEmployees().length > 0) {
+      <div class="pagination-container">
+        <div class="pagination-info">
+          <span>
+            Affichage de 
+            <strong>{{ (currentPage() - 1) * itemsPerPage + 1 }}</strong> 
+            à 
+            <strong>{{ Math.min(currentPage() * itemsPerPage, filteredEmployees().length) }}</strong> 
+            sur 
+            <strong>{{ filteredEmployees().length }}</strong> 
+            employés
+          </span>
+          
+          <div class="page-size-selector">
+            <label for="pageSize">Lignes par page :</label>
+            <select id="pageSize" [(ngModel)]="itemsPerPage" (change)="onPageSizeChange()">
+              <option [value]="5">5</option>
+              <option [value]="10">10</option>
+              <option [value]="25">25</option>
+              <option [value]="50">50</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pagination-controls">
+          <button class="pagination-btn" 
+                  (click)="previousPage()" 
+                  [disabled]="currentPage() === 1"
+                  [class.disabled]="currentPage() === 1">
+            <span class="material-symbols-outlined">chevron_left</span>
+            <span>Précédent</span>
+          </button>
+
+          <div class="page-numbers">
+            <button *ngIf="totalPages() > 1" 
+                    class="page-number" 
+                    [class.active]="currentPage() === 1"
+                    (click)="goToPage(1)">
+              1
+            </button>
+
+            <span *ngIf="currentPage() > 3" class="ellipsis">…</span>
+
+            <button *ngFor="let page of getVisiblePages()" 
+                    class="page-number" 
+                    [class.active]="currentPage() === page"
+                    (click)="goToPage(page)">
+              {{ page }}
+            </button>
+
+            <span *ngIf="currentPage() < totalPages() - 2" class="ellipsis">…</span>
+
+            <button *ngIf="totalPages() > 1" 
+                    class="page-number" 
+                    [class.active]="currentPage() === totalPages()"
+                    (click)="goToPage(totalPages())">
+              {{ totalPages() }}
+            </button>
+          </div>
+
+          <button class="pagination-btn" 
+                  (click)="nextPage()" 
+                  [disabled]="currentPage() === totalPages()"
+                  [class.disabled]="currentPage() === totalPages()">
+            <span>Suivant</span>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ============ MODALE WIZARD ================ -->
+<!-- ============================================ -->
+@if (showEmployeeModal()) {
+  <div class="modal-overlay" (click)="$event.target === $event.currentTarget && closeEmployeeModal()">
+    <div class="modal-glass max-lg">
+      
+      <!-- Header -->
+      <div class="modal-top-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">
+            <span class="material-symbols-outlined">{{ isEditMode() ? 'edit' : 'person_add' }}</span>
+          </div>
+          <div>
+            <h3>{{ isEditMode() ? 'Modifier le dossier' : 'Nouveau recrutement' }}</h3>
+            <p>{{ isEditMode() ? 'Mise à jour des informations' : 'Création complète du dossier employé' }}</p>
+          </div>
+        </div>
+        <button (click)="closeEmployeeModal()" class="close-btn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Stepper -->
+      @if (!isEditMode()) {
+        <div class="stepper-bar">
+          @for (s of stepsLabels; track s.num) {
+            <div class="step" [class.active]="currentStep() === s.num" [class.done]="currentStep() > s.num" (click)="goToStep(s.num)">
+              <div class="step-bubble">
+                @if (currentStep() > s.num) { <span class="material-symbols-outlined">check</span> }
+                @else { {{ s.num }} }
+              </div>
+              <span class="step-name">{{ s.label }}</span>
+              @if (s.num < totalSteps) { <div class="step-line"></div> }
+            </div>
+          }
+        </div>
+      }
+
+      <div class="modal-body-scroll">
+        
+        <!-- ============ ÉTAPE 1 : EMPLOYÉ ============ -->
+        @if ((currentStep() === 1 || isEditMode()) && employeeForm) {
+          <form [formGroup]="employeeForm">
+            
+            @if (!isEditMode()) {
+              <div class="form-block">
+                <div class="block-title"><span class="material-symbols-outlined">key</span> Compte Utilisateur</div>
+                <div class="form-grid grid-3">
+                  <div class="form-group">
+                    <label>Email professionnel *</label>
+                    <input type="email" formControlName="email" placeholder="ex: jean@fric.com"/>
+                    @if (employeeForm.get('email')?.touched && employeeForm.get('email')?.invalid) {
+                      <small class="error-text">Email invalide</small>
+                    }
+                  </div>
+                  <div class="form-group">
+                    <label>Mot de passe *</label>
+                    <input type="password" formControlName="password" placeholder="6 caractères min"/>
+                    @if (employeeForm.get('password')?.touched && employeeForm.get('password')?.invalid) {
+                      <small class="error-text">Trop court</small>
+                    }
+                  </div>
+                  <div class="form-group">
+                    <label>Rôle *</label>
+                    <div class="select-wrapper">
+                      <select formControlName="roleId">
+                        <option value="" disabled>-- Choisir --</option>
+                        @for (r of roles(); track r.id) {
+                          <option [value]="r.id">{{ r.name }}</option>
+                        }
+                      </select>
+                      <span class="material-symbols-outlined select-arrow">expand_more</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <div class="form-block">
+              <div class="block-title"><span class="material-symbols-outlined">contact_page</span> État Civil</div>
+              <div class="form-grid grid-4">
+                <div class="form-group span-2">
+                  <label>Nom *</label>
+                  <input type="text" formControlName="nom"/>
+                  @if (employeeForm.get('nom')?.touched && employeeForm.get('nom')?.invalid) {
+                    <small class="error-text">Nom requis</small>
+                  }
+                </div>
+                <div class="form-group span-2">
+                  <label>Prénom *</label>
+                  <input type="text" formControlName="prenom"/>
+                  @if (employeeForm.get('prenom')?.touched && employeeForm.get('prenom')?.invalid) {
+                    <small class="error-text">Prénom requis</small>
+                  }
+                </div>
+                <div class="form-group">
+                  <label>Sexe *</label>
+                  <div class="select-wrapper">
+                    <select formControlName="sexe">
+                      <option value="M">Masculin</option>
+                      <option value="F">Féminin</option>
+                    </select>
+                    <span class="material-symbols-outlined select-arrow">expand_more</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Date de naissance *</label>
+                  <input type="date" formControlName="date_naissance" (focus)="openDatePicker($event)" />
+                </div>
+                <div class="form-group span-2">
+                  <label>Téléphone *</label>
+                  <input type="number" formControlName="telephone"/>
+                </div>
+                <!-- Champ numéro d'urgence -->
+                <div class="form-group span-2">
+                  <label>Numéro d'urgence</label>
+                  <input type="text" formControlName="numeroContactUrgence" placeholder="Ex: 6X XX XX XX" />
+                </div>
+                <div class="form-group span-4">
+                  <label>Adresse complète *</label>
+                  <input type="text" formControlName="addresse" placeholder="Quartier, Ville, Pays"/>
+                </div>
+              </div>
+            </div>
+
+            <!-- ========== AFFECTATION ========== -->
+            <div class="form-block">
+              <div class="block-title"><span class="material-symbols-outlined">work</span> Affectation</div>
+              <div class="form-grid grid-3">
+                <div class="form-group">
+                  <label>Matricule interne *</label>
+                  <input type="text" formControlName="matriculeInterne" [readonly]="isEditMode()"/>
+                </div>
+                <div class="form-group">
+                  <label>Matricule CNPS</label>
+                  <input type="text" formControlName="matricule_CNPS"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Date d'embauche *</label>
+                  <input type="date" formControlName="date_embauche" (focus)="openDatePicker($event)" />
+                </div>
+
+                <div class="form-group">
+                  <label>Entreprise *</label>
+                  <div class="select-wrapper">
+                    <select formControlName="entrepriseId" (change)="onEntrepriseChange($event)">
+                      <option value="" disabled selected>-- Choisir une entreprise --</option>
+                      @for (ent of entreprises(); track ent.id) {
+                        <option [value]="ent.id">{{ ent.name }}</option>
+                      }
+                    </select>
+                    <span class="material-symbols-outlined select-arrow">expand_more</span>
+                  </div>
+                  @if (employeeForm.get('entrepriseId')?.touched && employeeForm.get('entrepriseId')?.invalid) {
+                    <small class="error-text">Veuillez sélectionner une entreprise</small>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label>Département *</label>
+                  <div class="select-wrapper">
+                    <select formControlName="departementId" (change)="onDepartementChange($event)">
+                      <option value="" disabled selected>-- Choisir un département --</option>
+                      @for (d of filteredDepartements(); track d.id) {
+                        <option [value]="d.id">{{ d.name }}</option>
+                      }
+                    </select>
+                    <span class="material-symbols-outlined select-arrow">expand_more</span>
+                  </div>
+                  @if (employeeForm.get('departementId')?.touched && employeeForm.get('departementId')?.invalid) {
+                    <small class="error-text">Veuillez sélectionner un département</small>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label>Poste occupé *</label>
+                  <div class="select-wrapper">
+                    <select formControlName="posteId">
+                      <option value="" disabled selected>-- Choisir un poste --</option>
+                      @for (p of filteredPostes(); track p.id || p.code) {
+                        <option [value]="p.id || p.code">{{ p.libelle || p.code }}</option>
+                      }
+                    </select>
+                    <span class="material-symbols-outlined select-arrow">expand_more</span>
+                  </div>
+                  @if (employeeForm.get('posteId')?.touched && employeeForm.get('posteId')?.invalid) {
+                    <small class="error-text">Veuillez sélectionner un poste</small>
+                  }
+                </div>
+              </div>
+            </div>
+          </form>
+        }
+
+        <!-- ============ ÉTAPE 2 : CONTRAT + SCANS ============ -->
+        @if (currentStep() === 2 && !isEditMode() && contractForm) {
+          <form [formGroup]="contractForm">
+            
+            <!-- ===== TYPE ET DATES ===== -->
+            <div class="form-block">
+              <div class="block-title"><span class="material-symbols-outlined">description</span> Type et dates</div>
+              <div class="form-grid grid-2">
+                <div class="form-group">
+                  <label>Type de contrat *</label>
+                  <div class="select-wrapper">
+                    <select formControlName="typeContrat" (change)="onContractTypeChangeStep2($event)">
+                      <option value="CDI">CDI</option>
+                      <option value="CDD">CDD</option>
+                      <option value="ESSAI">Contrat d'essai</option>
+                      <option value="STAGE_ACADEMIQUE">Stage académique</option>
+                      <option value="STAGE_PROFESSIONNEL">Stage professionnel</option>
+                      <option value="FREELANCE">Freelance</option>
+                    </select>
+                    <span class="material-symbols-outlined select-arrow">expand_more</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Statut *</label>
+                  <div class="select-wrapper">
+                    <select formControlName="statut">
+                      <option value="ACTIF">Actif</option>
+                      <option value="EN_ATTENTE">En attente</option>
+                      <option value="SUSPENDU">Suspendu</option>
+                      <option value="EXPIRE">Expiré</option>
+                      <option value="RESILIE">Résilié</option>
+                      <option value="ARCHIVE">Archivé</option>
+                      <option value="EN_ESSAI">Période d'essai</option>
+                    </select>
+                    <span class="material-symbols-outlined select-arrow">expand_more</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Date de début *</label>
+                  <input type="date" formControlName="dateDebut" (focus)="openDatePicker($event)" />
+                  @if (contractForm.get('dateDebut')?.touched && contractForm.get('dateDebut')?.invalid) {
+                    <small class="error-text">Date requise</small>
+                  }
+                </div>
+                <!-- Masquage dateFin si hasEndDate = false (CDI) -->
+                <div class="form-group" *ngIf="contractTypeConfigStep2()?.hasEndDate">
+                  <label>Date de fin <span *ngIf="isContractTypeStep2()?.hasEndDate" class="required">*</span></label>
+                  <input type="date" formControlName="dateFin" (focus)="openDatePicker($event)" />
+                  @if (contractForm.get('dateFin')?.touched && contractForm.get('dateFin')?.invalid) {
+                    <small class="error-text">Date requise pour ce type</small>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== PÉRIODE D'ESSAI ===== -->
+            <div class="form-block" *ngIf="isContractTypeStep2()?.requiresTrialPeriod">
+              <div class="block-title"><span class="material-symbols-outlined">timer</span> Période d'essai</div>
+              <div class="form-grid grid-2">
+                <div class="form-group">
+                  <label>Durée d'essai (mois)</label>
+                  <input type="number" formControlName="dureeEssaiMois" min="0" max="6" placeholder="Ex: 3" (change)="onDureeEssaiChangeStep2()" />
+                </div>
+                <div class="form-group">
+                  <label>Date de fin d'essai (calculée)</label>
+                  <input type="date" formControlName="dateFinEssai" readonly style="background:#f1f5f9;cursor:not-allowed;" />
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== SALAIRES ===== -->
+            <div class="form-block" *ngIf="isContractTypeStep2()?.requiresSalary !== false">
+              <div class="block-title"><span class="material-symbols-outlined">payments</span> Rémunération</div>
+              <div class="form-grid grid-2">
+                <div class="form-group">
+                  <label>Salaire brut <span *ngIf="isContractTypeStep2()?.requiresSalary" class="required">*</span></label>
+                  <input type="number" step="0.01" formControlName="salaireBrut" placeholder="Ex: 2000000" />
+                </div>
+                <div class="form-group">
+                  <label>Salaire net</label>
+                  <input type="number" step="0.01" formControlName="salaireNet" placeholder="Ex: 1500000" />
+                </div>
+                <div class="form-group">
+                  <label>Taux horaire</label>
+                  <input type="number" step="0.01" formControlName="tauxHoraire" placeholder="Ex: 15000" />
+                </div>
+                <div class="form-group">
+                  <label>Heures/semaine</label>
+                  <input type="number" formControlName="nombreHeuresSemaine" placeholder="Ex: 35" />
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== CDD ===== -->
+            <div class="form-block" *ngIf="contractForm.get('typeContrat')?.value === 'CDD'">
+              <div class="block-title"><span class="material-symbols-outlined">info</span> Informations CDD</div>
+              <div class="form-grid grid-2">
+                <div class="form-group span-2">
+                  <label>Motif de recours <span class="required">*</span></label>
+                  <input type="text" formControlName="motifRecours" placeholder="Ex: Remplacement d'un salarié absent" />
+                </div>
+                <div class="form-group">
+                  <label>Durée (mois)</label>
+                  <input type="number" formControlName="dureeMois" placeholder="Ex: 12" />
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== STAGE ===== -->
+            <div class="form-block" *ngIf="contractForm.get('typeContrat')?.value === 'STAGE_ACADEMIQUE' || contractForm.get('typeContrat')?.value === 'STAGE_PROFESSIONNEL'">
+              <div class="block-title"><span class="material-symbols-outlined">school</span> Informations Stage</div>
+              <div class="form-grid grid-2">
+                <div class="form-group span-2">
+                  <label>Établissement <span class="required">*</span></label>
+                  <input type="text" formControlName="etablissement" placeholder="Ex: Université de Yaoundé I" />
+                </div>
+                <div class="form-group">
+                  <label>Tuteur <span class="required">*</span></label>
+                  <input type="text" formControlName="tuteurNom" placeholder="Nom du tuteur" />
+                </div>
+                <div class="form-group">
+                  <label>Email du tuteur</label>
+                  <input type="email" formControlName="tuteurEmail" placeholder="tuteur@exemple.com" />
+                </div>
+                <div class="form-group">
+                  <label>Téléphone du tuteur</label>
+                  <input type="text" formControlName="tuteurTelephone" placeholder="Téléphone" />
+                </div>
+                <div class="form-group span-2">
+                  <label>Objectifs du stage</label>
+                  <input type="text" formControlName="objectifsStage" placeholder="Objectifs" />
+                </div>
+                <div class="form-group">
+                  <label>Durée (semaines)</label>
+                  <input type="number" formControlName="dureeSemaines" placeholder="Ex: 12" />
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== FREELANCE ===== -->
+            <div class="form-block" *ngIf="contractForm.get('typeContrat')?.value === 'FREELANCE'">
+              <div class="block-title"><span class="material-symbols-outlined">work</span> Informations Freelance</div>
+              <div class="form-grid grid-2">
+                <div class="form-group span-2">
+                  <label>Description de la prestation <span class="required">*</span></label>
+                  <input type="text" formControlName="descriptionPrestation" placeholder="Description" />
+                </div>
+                <div class="form-group">
+                  <label>Modalités de paiement</label>
+                  <input type="text" formControlName="modalitesPaiement" placeholder="Ex: Facture mensuelle" />
+                </div>
+                <div class="form-group">
+                  <label>Durée (mois)</label>
+                  <input type="number" formControlName="dureeMoisPrestation" placeholder="Ex: 6" />
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== RENOUVELLEMENT (visible pour ESSAI via showRenewable) ===== -->
+            <div class="form-block" *ngIf="isContractTypeStep2()?.showRenewable">
+              <div class="block-title"><span class="material-symbols-outlined">autorenew</span> Renouvellement</div>
+              <div class="form-grid grid-2">
+                <div class="form-group">
+                  <label>Renouvelable</label>
+                  <div class="select-wrapper">
+                    <select formControlName="estRenouvelable">
+                      <option [value]="true">Oui</option>
+                      <option [value]="false">Non</option>
+                    </select>
+                    <span class="material-symbols-outlined select-arrow">expand_more</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Renouvellement max</label>
+                  <input type="number" formControlName="renouvellementMax" placeholder="Ex: 2" />
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== OBSERVATIONS ===== -->
+            <div class="form-block">
+              <div class="block-title"><span class="material-symbols-outlined">note</span> Observations</div>
+              <div class="form-group">
+                <textarea formControlName="observations" class="form-control" rows="2" placeholder="Informations complémentaires..."></textarea>
+              </div>
+            </div>
+
+            <!-- ===== SCANS DU CONTRAT ===== -->
+            <div class="form-block">
+              <div class="block-title"><span class="material-symbols-outlined">scanner</span> Scans du contrat signé</div>
+              <p class="hint">Joignez ici le(s) scan(s) du contrat de travail signé par le collaborateur.</p>
+              <div class="upload-zone" (click)="$event.stopPropagation()">
+                <input type="file" multiple accept="image/*,application/pdf" (change)="onContratScanChange($event)"/>
+                <div class="upload-content">
+                  <span class="material-symbols-outlined upload-ico">upload_file</span>
+                  <strong>Cliquez pour ouvrir vos dossiers</strong>
+                  <span>ou glissez-déposez les fichiers ici</span>
+                  <small>PDF, JPG, PNG acceptés</small>
+                </div>
+              </div>
+              @if (contratScanFiles.length > 0) {
+                <div class="file-chips">
+                  @for (f of contratScanFiles; track f.name; let i = $index) {
+                    <div class="chip">
+                      <span class="material-symbols-outlined">description</span>
+                      <span class="chip-name">{{ f.name }}</span>
+                      <button type="button" (click)="removeFile('contratScan', i)">
+                        <span class="material-symbols-outlined">close</span>
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </form>
+        }
+
+        <!-- ============ ÉTAPE 3 : DOCUMENTS RH ============ -->
+        @if (currentStep() === 3 && !isEditMode()) {
+          <div class="form-block">
+            <div class="block-title"><span class="material-symbols-outlined">folder_copy</span> Pièces Justificatives</div>
+            <p class="hint">Ces documents seront rattachés au dossier du collaborateur. Cliquez sur chaque zone pour ouvrir vos dossiers.</p>
+
+            <div class="docs-grid">
+              <div class="doc-box">
+                <div class="doc-box-header">
+                  <span class="material-symbols-outlined">badge</span>
+                  <span>CNI / Passeport</span>
+                </div>
+                <div class="upload-zone small" (click)="$event.stopPropagation()">
+                  <input type="file" multiple accept="image/*,application/pdf" (change)="onCategoryFileChange($event, 'cni')"/>
+                  <span class="material-symbols-outlined">add_photo_alternate</span>
+                  <span>Ouvrir les dossiers</span>
+                </div>
+                @if (cniFiles.length > 0) {
+                  <div class="file-chips small">
+                    @for (f of cniFiles; track f.name; let i = $index) {
+                      <div class="chip">
+                        <span class="chip-name">{{ f.name }}</span>
+                        <button type="button" (click)="removeFile('cni', i)"><span class="material-symbols-outlined">close</span></button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="doc-box">
+                <div class="doc-box-header">
+                  <span class="material-symbols-outlined">school</span>
+                  <span>Diplômes</span>
+                </div>
+                <div class="upload-zone small" (click)="$event.stopPropagation()">
+                  <input type="file" multiple accept="image/*,application/pdf" (change)="onCategoryFileChange($event, 'diplome')"/>
+                  <span class="material-symbols-outlined">add_photo_alternate</span>
+                  <span>Ouvrir les dossiers</span>
+                </div>
+                @if (diplomeFiles.length > 0) {
+                  <div class="file-chips small">
+                    @for (f of diplomeFiles; track f.name; let i = $index) {
+                      <div class="chip">
+                        <span class="chip-name">{{ f.name }}</span>
+                        <button type="button" (click)="removeFile('diplome', i)"><span class="material-symbols-outlined">close</span></button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="doc-box">
+                <div class="doc-box-header">
+                  <span class="material-symbols-outlined">photo_camera</span>
+                  <span>Photo d'identité</span>
+                </div>
+                <div class="upload-zone small" (click)="$event.stopPropagation()">
+                  <input type="file" multiple accept="image/*" (change)="onCategoryFileChange($event, 'photo')"/>
+                  <span class="material-symbols-outlined">add_photo_alternate</span>
+                  <span>Ouvrir les dossiers</span>
+                </div>
+                @if (photoFiles.length > 0) {
+                  <div class="file-chips small">
+                    @for (f of photoFiles; track f.name; let i = $index) {
+                      <div class="chip">
+                        <span class="chip-name">{{ f.name }}</span>
+                        <button type="button" (click)="removeFile('photo', i)"><span class="material-symbols-outlined">close</span></button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="doc-box">
+                <div class="doc-box-header">
+                  <span class="material-symbols-outlined">medical_services</span>
+                  <span>Certificats / Visites</span>
+                </div>
+                <div class="upload-zone small" (click)="$event.stopPropagation()">
+                  <input type="file" multiple accept="image/*,application/pdf" (change)="onCategoryFileChange($event, 'certificat')"/>
+                  <span class="material-symbols-outlined">add_photo_alternate</span>
+                  <span>Ouvrir les dossiers</span>
+                </div>
+                @if (certificatFiles.length > 0) {
+                  <div class="file-chips small">
+                    @for (f of certificatFiles; track f.name; let i = $index) {
+                      <div class="chip">
+                        <span class="chip-name">{{ f.name }}</span>
+                        <button type="button" (click)="removeFile('certificat', i)"><span class="material-symbols-outlined">close</span></button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="summary-bar">
+              <span class="material-symbols-outlined">check_circle</span>
+              <span><strong>{{ totalFiles() }}</strong> fichier(s) sélectionné(s)</span>
+            </div>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer Wizard -->
+      <div class="modal-footer-bar">
+        <!-- Annuler à gauche avec margin-right: auto -->
+        <button class="btn btn-ghost" style="margin-right: auto;" (click)="closeEmployeeModal()">Annuler</button>
+        
+        @if (!isEditMode()) {
+          @if (currentStep() > 1) {
+            <button class="btn btn-secondary" (click)="prevStep()">
+              <span class="material-symbols-outlined">arrow_back</span> Retour
+            </button>
+          }
+          @if (currentStep() < totalSteps) {
+            <button class="btn btn-primary" (click)="nextStep()">
+              Continuer <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+          } @else {
+            <button class="btn btn-success" 
+                    (click)="submitEmployee()"
+                    [disabled]="!canCreateEmployee()">
+              <span class="material-symbols-outlined">check_circle</span> Créer le dossier
+            </button>
+          }
+        } @else {
+          <button class="btn btn-primary" 
+                  (click)="submitEmployee()"
+                  [disabled]="!canUpdateEmployee()">
+            Enregistrer
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- ============ MODALE PRÉVISUALISATION ========== -->
+<!-- ============================================ -->
+@if (showPreviewModal() && previewDocument()) {
+  <div class="doc-preview-overlay" (click)="closePreviewModal()">
+    <div class="doc-preview-modal" (click)="$event.stopPropagation()">
+      <div class="doc-preview-header">
+        <h3>{{ previewDocument()?.name || 'Document' }}</h3>
+        <button class="close-btn" (click)="closePreviewModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="doc-preview-body">
+        @if (isImage(previewDocument())) {
+          <img 
+            [src]="getDocumentPreviewUrlWithToken(previewDocument().id)" 
+            [alt]="previewDocument()?.name"
+            (error)="onImageError($event)"
+          />
+        } @else {
+          <iframe 
+            [src]="getDocumentPreviewUrlWithToken(previewDocument().id)"
+            (error)="onIframeError($event)"
+          ></iframe>
+        }
+      </div>
+      <div class="doc-preview-footer">
+        <button class="btn btn-ghost" (click)="closePreviewModal()">Fermer</button>
+        <button class="btn btn-primary" (click)="downloadDocument(previewDocument()?.id, previewDocument()?.name)">
+          <span class="material-symbols-outlined">download</span>
+          Télécharger
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- ============ MODALE DÉTAILS ================ -->
+<!-- ============================================ -->
+@if (showDetailModal() && selectedEmployee()) {
+  <div class="modal-overlay" (click)="$event.target === $event.currentTarget && closeDetailModal()">
+    <div class="modal-glass max-lg">
+      <div class="modal-top-header">
+        <div class="modal-title-group">
+          <div class="avatar big">{{ selectedEmployee().prenom?.[0] }}{{ selectedEmployee().nom?.[0] }}</div>
+          <div>
+            <h3>{{ selectedEmployee().prenom }} {{ selectedEmployee().nom }}</h3>
+            <p class="sub">{{ getPosteName(selectedEmployee().posteId) }} — {{ getDepartementName(selectedEmployee().departementId) }}</p>
+          </div>
+        </div>
+        <button (click)="closeDetailModal()" class="close-btn"><span class="material-symbols-outlined">close</span></button>
+      </div>
+
+      <!-- Onglets -->
+      <div class="detail-tabs">
+        <button class="tab-btn" [class.active]="activeDetailTab() === 'info'" (click)="switchDetailTab('info')">
+          <span class="material-symbols-outlined">person</span> Identité
+        </button>
+        <button class="tab-btn" [class.active]="activeDetailTab() === 'contracts'" (click)="switchDetailTab('contracts')">
+          <span class="material-symbols-outlined">gavel</span> Contrats
+        </button>
+        <button class="tab-btn" [class.active]="activeDetailTab() === 'documents'" (click)="switchDetailTab('documents')">
+          <span class="material-symbols-outlined">inventory</span> Documents
+        </button>
+        <button class="tab-btn" [class.active]="activeDetailTab() === 'history'" (click)="switchDetailTab('history')">
+          <span class="material-symbols-outlined">history</span> Historique
+        </button>
+      </div>
+
+      <div class="modal-body-scroll">
+        <!-- Onglet Identité -->
+        @if (activeDetailTab() === 'info') {
+          <div class="detail-section">
+            <h4><span class="material-symbols-outlined">contact_page</span> Identité & Contact</h4>
+            <div class="detail-grid">
+              <div class="detail-item"><span class="lbl">Sexe</span><span class="val">{{ selectedEmployee().sexe === 'M' ? 'Masculin' : 'Féminin' }}</span></div>
+              <div class="detail-item"><span class="lbl">Né(e) le</span><span class="val">{{ selectedEmployee().date_naissance }}</span></div>
+              <div class="detail-item"><span class="lbl">Téléphone</span><span class="val">{{ selectedEmployee().telephone }}</span></div>
+              <div class="detail-item"><span class="lbl">Urgence</span><span class="val">{{ selectedEmployee().numeroContactUrgence || 'Non renseigné' }}</span></div>
+              <div class="detail-item"><span class="lbl">Email</span><span class="val">{{ selectedEmployee().user?.email || '—' }}</span></div>
+              <div class="detail-item span-2"><span class="lbl">Adresse</span><span class="val">{{ selectedEmployee().addresse }}</span></div>
+              <div class="detail-item"><span class="lbl">Matricule</span><span class="val accent">{{ selectedEmployee().matriculeInterne }}</span></div>
+              <div class="detail-item"><span class="lbl">CNPS</span><span class="val">{{ selectedEmployee().matricule_CNPS || 'Non fourni' }}</span></div>
+              <div class="detail-item"><span class="lbl">Embauche</span><span class="val">{{ selectedEmployee().date_embauche }}</span></div>
+            </div>
+          </div>
+
+          <!-- Section 2FA -->
+          <div class="detail-section">
+            <h4><span class="material-symbols-outlined">security</span> Sécurité 2FA</h4>
+            <div class="detail-item" style="display:flex; align-items:center; gap:12px; padding:12px 0;">
+              <span class="material-symbols-outlined" [style.color]="twoFactorStatus()[selectedEmployee().id] ? '#22c55e' : '#94a3b8'">
+                {{ twoFactorStatus()[selectedEmployee().id] ? 'shield' : 'shield' }}
+              </span>
+              <span style="font-weight:500;">
+                {{ twoFactorStatus()[selectedEmployee().id] ? '2FA Activé' : '2FA Désactivé' }}
+              </span>
+            </div>
+          </div>
+        }
+
+        <!-- Onglet Contrats -->
+        @if (activeDetailTab() === 'contracts') {
+          <div class="detail-section">
+            <h4>
+              <span class="material-symbols-outlined">history_edu</span> 
+              Contrats ({{ activeEmployeeContracts().length }})
+            </h4>
+            @for (c of activeEmployeeContracts(); track c.id) {
+              <div class="list-row" [class.expiring]="isContractExpiring(c)">
+                <div class="list-icon">
+                  <span class="material-symbols-outlined">gavel</span>
+                </div>
+                <div class="list-body">
+                  <div class="list-title">
+                    {{ c.typeContrat }}
+                    @if (isContractExpiring(c)) {
+                      <span class="expiring-badge">Expire bientôt !</span>
+                    }
+                  </div>
+                  <div class="list-meta">
+                    Du {{ c.dateDebut }} au 
+                    <span [class.expiring-date]="isContractExpiring(c)">{{ c.dateFin || 'Indéterminé' }}</span>
+                    <span class="employee-name" *ngIf="c.employee?.nom || c.employeeName">
+                      • 
+                      @if (c.employee) {
+                        {{ c.employee.prenom }} {{ c.employee.nom }}
+                      } @else if (c.employeeName) {
+                        {{ c.employeeName }}
+                      } @else {
+                        Employé #{{ c.employeeId || c.employee_id }}
+                      }
+                    </span>
+                  </div>
+                </div>
+                <span class="status-pill" [class.active]="c.statut === 'ACTIF'">
+                  {{ c.statut }}
+                </span>
+              </div>
+            } @empty {
+              <div class="empty-mini">Aucun contrat enregistré.</div>
+            }
+          </div>
+        }
+
+        <!-- Onglet Documents -->
+        @if (activeDetailTab() === 'documents') {
+          <div class="detail-section">
+            <h4>
+              <span class="material-symbols-outlined">inventory</span> 
+              Documents ({{ employeeDocuments().length }})
+            </h4>
+            
+            <div class="documents-grid-mini">
+              @for (doc of employeeDocuments(); track doc.id) {
+                <div class="doc-mini-card" (click)="openDocumentPreview(doc)">
+                  <div class="doc-mini-icon">{{ getDocumentIcon(doc.typeDocument) }}</div>
+                  <div class="doc-mini-info">
+                    <div class="doc-mini-name">{{ doc.name || 'Document' }}</div>
+                    <div class="doc-mini-meta">{{ doc.typeDocument }} • {{ doc.dateUpload || doc.createdAt }}</div>
+                  </div>
+                  <div class="doc-mini-actions">
+                    <button class="btn-icon" title="Télécharger" (click)="$event.stopPropagation(); downloadDocument(doc.id, doc.name)">
+                      <span class="material-symbols-outlined">download</span>
+                    </button>
+                  </div>
+                </div>
+              } @empty {
+                <div class="empty-mini">Aucun document.</div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- ========== ONGLET HISTORIQUE ========== -->
+        @if (activeDetailTab() === 'history') {
+          <div class="detail-section history-section">
+            <div class="history-header">
+              <h4>
+                <span class="material-symbols-outlined">history</span> 
+                Parcours de l'employé
+              </h4>
+              <div class="history-actions">
+                <div class="format-selector">
+                  <select [(ngModel)]="historyDownloadFormat" class="format-select">
+                    <option value="csv">CSV</option>
+                    <option value="pdf">PDF</option>
+                  </select>
+                  <button class="btn btn-sm btn-primary" 
+                          (click)="downloadHistory(selectedEmployee().id, historyDownloadFormat())"
+                          [disabled]="isLoadingHistory() || !employeeHistory()">
+                    <span class="material-symbols-outlined">download</span>
+                    Télécharger
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            @if (isLoadingHistory()) {
+              <div class="loading-spinner">
+                <div class="spinner"></div>
+                <span>Chargement de l'historique...</span>
+              </div>
+            } @else if (employeeHistory()) {
+              @if (employeeHistory().events && employeeHistory().events.length > 0) {
+                <div class="timeline">
+                  @for (event of employeeHistory().events; track $index) {
+                    <div class="timeline-item" [class]="'timeline-' + getEventColor(event.type)">
+                      <div class="timeline-icon">
+                        <span class="material-symbols-outlined">{{ getEventIcon(event.type) }}</span>
+                      </div>
+                      <div class="timeline-content">
+                        <div class="timeline-header">
+                          <span class="timeline-date">{{ event.date | date:'dd/MM/yyyy HH:mm' }}</span>
+                          <span class="timeline-type">{{ event.type }}</span>
+                        </div>
+                        <div class="timeline-description">{{ event.description }}</div>
+                        @if (event.details) {
+                          <div class="timeline-details">
+                            @for (item of getDetailsArray(event.details); track item.key) {
+                              <span class="detail-tag">
+                                <strong>{{ item.key }} :</strong> {{ item.value }}
+                              </span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="empty-mini">Aucun événement enregistré pour cet employé.</div>
+              }
+            } @else {
+              <div class="empty-mini">Impossible de charger l'historique.</div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer-bar">
+        @if (canUploadDocuments()) {
+          <button (click)="openDocModal(selectedEmployee().id)" class="btn btn-secondary">
+            <span class="material-symbols-outlined">cloud_upload</span> Document
+          </button>
+        }
+        <button (click)="closeDetailModal()" class="btn btn-primary">Fermer</button>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- ============================================ -->
+<!-- ============ MODALE DOCUMENTS ============== -->
+<!-- ============================================ -->
+@if (showDocModal()) {
+  <div class="modal-overlay" (click)="$event.target === $event.currentTarget && closeDocModal()">
+    <div class="modal-glass max-md">
+      <div class="modal-top-header">
+        <div class="modal-title-group">
+          <div class="modal-icon purple"><span class="material-symbols-outlined">cloud_upload</span></div>
+          <div><h3>Ajouter un document</h3><p>Justificatif RH numérique</p></div>
+        </div>
+        <button (click)="closeDocModal()" class="close-btn"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="modal-body-scroll">
+        <div class="form-group">
+          <label>Type de document</label>
+          <div class="select-wrapper" style="margin-bottom: 20px;">
+            <select (change)="onDocumentTypeChange($event)">
+              <option value="CNI">CNI</option>
+              <option value="DIPLOME">Diplôme</option>
+              <option value="CONTRAT_SIGNE">Contrat signé</option>
+              <option value="CERTIFICAT">Certificat</option>
+              <option value="BULLETIN_PAIE">Bulletin de paie</option>
+              <option value="AUTRE">Autre</option>
+            </select>
+            <span class="material-symbols-outlined select-arrow">expand_more</span>
+          </div>
+        </div>
+        <div class="upload-zone" (click)="$event.stopPropagation()">
+          <input type="file" multiple (change)="onDocFileChange($event)" accept="image/*,application/pdf"/>
+          <div class="upload-content">
+            <span class="material-symbols-outlined upload-ico">drive_folder_upload</span>
+            <strong>Cliquez pour ouvrir vos dossiers</strong>
+            <span>ou glissez-déposez</span>
+          </div>
+        </div>
+        @if (docFiles.length > 0) {
+          <div class="file-chips" style="margin-top:16px;">
+            @for (f of docFiles; track f.name) {
+              <div class="chip"><span class="material-symbols-outlined">description</span><span class="chip-name">{{ f.name }}</span></div>
+            }
+          </div>
+        }
+      </div>
+      <div class="modal-footer-bar">
+        <button class="btn btn-ghost" style="margin-right: auto;" (click)="closeDocModal()">Annuler</button>
+        <button class="btn btn-primary" 
+                [disabled]="docFiles.length === 0 || !canUploadDocuments()" 
+                (click)="submitEmployeeDocuments()">
+          Téléverser
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- ============ MODALE CONTRAT ================ -->
+<!-- ============================================ -->
+@if (showContratModal()) {
+  <div class="modal-overlay" (click)="$event.target === $event.currentTarget && closeContratModal()">
+    <div class="modal-glass max-lg">
+      <!-- Header -->
+      <div class="modal-top-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">
+            <span class="material-symbols-outlined">contract</span>
+          </div>
+          <div>
+            <h3>Nouveau contrat</h3>
+            <p>Attribuez un contrat à un employé</p>
+          </div>
+        </div>
+        <button class="close-btn" (click)="closeContratModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body-scroll">
+        <form [formGroup]="contratFormModal">
+          <!-- ==================== EMPLOYÉ ==================== -->
+          <div class="form-block">
+            <div class="block-title"><span class="material-symbols-outlined">person</span> Employé</div>
+            <div class="form-group">
+              <label>Employé *</label>
+              <div class="select-wrapper">
+                <select formControlName="employeeId">
+                  <option value="" disabled selected>-- Sélectionner un employé --</option>
+                  @for (emp of employees(); track emp.id) {
+                    <option [value]="emp.id">{{ emp.prenom }} {{ emp.nom }} ({{ emp.matriculeInterne }})</option>
+                  }
+                </select>
+                <span class="material-symbols-outlined select-arrow">expand_more</span>
+              </div>
+              @if (contratFormModal.get('employeeId')?.touched && contratFormModal.get('employeeId')?.invalid) {
+                <small class="error-text">Veuillez sélectionner un employé</small>
+              }
+            </div>
+          </div>
+
+          <!-- ==================== TYPE ET DATES ==================== -->
+          <div class="form-block">
+            <div class="block-title"><span class="material-symbols-outlined">description</span> Type et dates</div>
+            <div class="form-grid grid-2">
+              <div class="form-group">
+                <label>Type de contrat *</label>
+                <div class="select-wrapper">
+                  <select formControlName="typeContrat" (change)="onContractTypeChange($event)">
+                    <option value="CDI">CDI</option>
+                    <option value="CDD">CDD</option>
+                    <option value="ESSAI">Contrat d'essai</option>
+                    <option value="STAGE_ACADEMIQUE">Stage académique</option>
+                    <option value="STAGE_PROFESSIONNEL">Stage professionnel</option>
+                    <option value="FREELANCE">Freelance</option>
+                  </select>
+                  <span class="material-symbols-outlined select-arrow">expand_more</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Statut *</label>
+                <div class="select-wrapper">
+                  <select formControlName="statut">
+                    <option value="ACTIF">Actif</option>
+                    <option value="EN_ATTENTE">En attente</option>
+                    <option value="SUSPENDU">Suspendu</option>
+                    <option value="EXPIRE">Expiré</option>
+                    <option value="RESILIE">Résilié</option>
+                    <option value="ARCHIVE">Archivé</option>
+                    <option value="EN_ESSAI">Période d'essai</option>
+                  </select>
+                  <span class="material-symbols-outlined select-arrow">expand_more</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Date de début *</label>
+                <input type="date" formControlName="dateDebut" (focus)="openDatePicker($event)" />
+                @if (contratFormModal.get('dateDebut')?.touched && contratFormModal.get('dateDebut')?.invalid) {
+                  <small class="error-text">Date requise</small>
+                }
+              </div>
+              <!-- Masquage dateFin si hasEndDate = false (CDI) -->
+              <div class="form-group" *ngIf="contractTypeConfig()?.hasEndDate">
+                <label>Date de fin <span *ngIf="contractTypeConfig()?.hasEndDate" class="required">*</span></label>
+                <input type="date" formControlName="dateFin" (focus)="openDatePicker($event)" />
+                @if (contratFormModal.get('dateFin')?.touched && contratFormModal.get('dateFin')?.invalid) {
+                  <small class="error-text">Date requise pour ce type</small>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== PÉRIODE D'ESSAI ==================== -->
+          <div class="form-block" *ngIf="contractTypeConfig()?.requiresTrialPeriod">
+            <div class="block-title"><span class="material-symbols-outlined">timer</span> Période d'essai</div>
+            <div class="form-grid grid-2">
+              <div class="form-group">
+                <label>Durée d'essai (mois)</label>
+                <input type="number" formControlName="dureeEssaiMois" min="0" max="6" placeholder="Ex: 3" (change)="onDureeEssaiChange()" />
+                @if (contratFormModal.get('dureeEssaiMois')?.touched && contratFormModal.get('dureeEssaiMois')?.invalid) {
+                  <small class="error-text">Valeur entre 0 et 6</small>
+                }
+              </div>
+              <div class="form-group">
+                <label>Date de fin d'essai (calculée automatiquement)</label>
+                <input type="date" formControlName="dateFinEssai" readonly style="background:#f1f5f9;cursor:not-allowed;" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== SALAIRES ==================== -->
+          <div class="form-block" *ngIf="contractTypeConfig()?.requiresSalary !== false">
+            <div class="block-title"><span class="material-symbols-outlined">payments</span> Rémunération</div>
+            <div class="form-grid grid-2">
+              <div class="form-group">
+                <label>Salaire brut <span *ngIf="contractTypeConfig()?.requiresSalary" class="required">*</span></label>
+                <input type="number" step="0.01" formControlName="salaireBrut" placeholder="Ex: 2000000" />
+                @if (contratFormModal.get('salaireBrut')?.touched && contratFormModal.get('salaireBrut')?.invalid) {
+                  <small class="error-text">Montant requis</small>
+                }
+              </div>
+              <div class="form-group">
+                <label>Salaire net</label>
+                <input type="number" step="0.01" formControlName="salaireNet" placeholder="Ex: 1500000" />
+              </div>
+              <div class="form-group">
+                <label>Taux horaire</label>
+                <input type="number" step="0.01" formControlName="tauxHoraire" placeholder="Ex: 15000" />
+              </div>
+              <div class="form-group">
+                <label>Heures/semaine</label>
+                <input type="number" formControlName="nombreHeuresSemaine" placeholder="Ex: 35" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== CDD ==================== -->
+          <div class="form-block" *ngIf="isContractType('CDD')">
+            <div class="block-title"><span class="material-symbols-outlined">info</span> Informations CDD</div>
+            <div class="form-grid grid-2">
+              <div class="form-group span-2">
+                <label>Motif de recours <span class="required">*</span></label>
+                <input type="text" formControlName="motifRecours" placeholder="Ex: Remplacement d'un salarié absent" />
+                @if (contratFormModal.get('motifRecours')?.touched && contratFormModal.get('motifRecours')?.invalid) {
+                  <small class="error-text">Motif requis</small>
+                }
+              </div>
+              <div class="form-group">
+                <label>Durée (mois)</label>
+                <input type="number" formControlName="dureeMois" placeholder="Ex: 12" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== STAGE ==================== -->
+          <div class="form-block" *ngIf="isContractType('STAGE_ACADEMIQUE') || isContractType('STAGE_PROFESSIONNEL')">
+            <div class="block-title"><span class="material-symbols-outlined">school</span> Informations Stage</div>
+            <div class="form-grid grid-2">
+              <div class="form-group span-2">
+                <label>Établissement <span class="required">*</span></label>
+                <input type="text" formControlName="etablissement" placeholder="Ex: Université de Yaoundé I" />
+                @if (contratFormModal.get('etablissement')?.touched && contratFormModal.get('etablissement')?.invalid) {
+                  <small class="error-text">Établissement requis</small>
+                }
+              </div>
+              <div class="form-group">
+                <label>Tuteur <span class="required">*</span></label>
+                <input type="text" formControlName="tuteurNom" placeholder="Nom du tuteur" />
+                @if (contratFormModal.get('tuteurNom')?.touched && contratFormModal.get('tuteurNom')?.invalid) {
+                  <small class="error-text">Tuteur requis</small>
+                }
+              </div>
+              <div class="form-group">
+                <label>Email du tuteur</label>
+                <input type="email" formControlName="tuteurEmail" placeholder="tuteur@exemple.com" />
+              </div>
+              <div class="form-group">
+                <label>Téléphone du tuteur</label>
+                <input type="text" formControlName="tuteurTelephone" placeholder="Téléphone" />
+              </div>
+              <div class="form-group span-2">
+                <label>Objectifs du stage</label>
+                <input type="text" formControlName="objectifsStage" placeholder="Objectifs" />
+              </div>
+              <div class="form-group">
+                <label>Durée (semaines)</label>
+                <input type="number" formControlName="dureeSemaines" placeholder="Ex: 12" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== FREELANCE ==================== -->
+          <div class="form-block" *ngIf="isContractType('FREELANCE')">
+            <div class="block-title"><span class="material-symbols-outlined">work</span> Informations Freelance</div>
+            <div class="form-grid grid-2">
+              <div class="form-group span-2">
+                <label>Description de la prestation <span class="required">*</span></label>
+                <input type="text" formControlName="descriptionPrestation" placeholder="Description" />
+                @if (contratFormModal.get('descriptionPrestation')?.touched && contratFormModal.get('descriptionPrestation')?.invalid) {
+                  <small class="error-text">Description requise</small>
+                }
+              </div>
+              <div class="form-group">
+                <label>Modalités de paiement</label>
+                <input type="text" formControlName="modalitesPaiement" placeholder="Ex: Facture mensuelle" />
+              </div>
+              <div class="form-group">
+                <label>Durée (mois)</label>
+                <input type="number" formControlName="dureeMoisPrestation" placeholder="Ex: 6" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== RENOUVELLEMENT (visible pour ESSAI via showRenewable) ==================== -->
+          <div class="form-block" *ngIf="contractTypeConfig()?.showRenewable">
+            <div class="block-title"><span class="material-symbols-outlined">autorenew</span> Renouvellement</div>
+            <div class="form-grid grid-2">
+              <div class="form-group">
+                <label>Renouvelable</label>
+                <div class="select-wrapper">
+                  <select formControlName="estRenouvelable">
+                    <option [value]="true">Oui</option>
+                    <option [value]="false">Non</option>
+                  </select>
+                  <span class="material-symbols-outlined select-arrow">expand_more</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Renouvellement max</label>
+                <input type="number" formControlName="renouvellementMax" placeholder="Ex: 2" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== OBSERVATIONS ==================== -->
+          <div class="form-block">
+            <div class="block-title"><span class="material-symbols-outlined">note</span> Observations</div>
+            <div class="form-group">
+              <textarea formControlName="observations" class="form-control" rows="2" placeholder="Informations complémentaires..."></textarea>
+            </div>
+          </div>
+
+          <!-- ==================== DOCUMENTS ==================== -->
+          <div class="form-block">
+            <div class="block-title"><span class="material-symbols-outlined">attach_file</span> Documents du contrat</div>
+            <p class="hint">Joignez le scan du contrat signé (PDF, image).</p>
+            <div class="upload-zone" (click)="$event.stopPropagation()">
+              <input type="file" multiple accept="image/*,application/pdf" (change)="onContratFilesChange($event)" />
+              <div class="upload-content">
+                <span class="material-symbols-outlined upload-ico">upload_file</span>
+                <strong>Cliquez pour ouvrir vos dossiers</strong>
+                <span>ou glissez-déposez les fichiers ici</span>
+                <small>PDF, JPG, PNG acceptés</small>
+              </div>
+            </div>
+            @if (contratFiles.length > 0) {
+              <div class="file-chips" style="margin-top:12px;">
+                @for (f of contratFiles; track f.name; let i = $index) {
+                  <div class="chip">
+                    <span class="material-symbols-outlined">description</span>
+                    <span class="chip-name">{{ f.name }}</span>
+                    <button type="button" (click)="removeContratFile(i)">
+                      <span class="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer-bar">
+        <button class="btn btn-ghost" style="margin-right: auto;" (click)="closeContratModal()">Annuler</button>
+        <button class="btn btn-primary" (click)="submitContrat()" [disabled]="contratFormModal.invalid">
+          <span class="material-symbols-outlined">check_circle</span> Créer le contrat
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- ============ MODALE 2FA =================== -->
+<!-- ============================================ -->
+@if (show2FAModal() && selected2FAEmployee()) {
+  <div class="modal-overlay" (click)="$event.target === $event.currentTarget && close2FAModal()">
+    <div class="modal-glass max-md">
+      
+      <!-- Header -->
+      <div class="modal-top-header">
+        <div class="modal-title-group">
+          <div class="modal-icon" [class.success]="twoFASetupStep() === 3 || twoFASetupStep() === 4" [class.primary]="twoFASetupStep() === 0 || twoFASetupStep() === 1">
+            <span class="material-symbols-outlined">
+              @if (twoFASetupStep() === 3) {
+                shield
+              } @else if (twoFASetupStep() === 4) {
+                check_circle
+              } @else {
+                security
+              }
+            </span>
+          </div>
+          <div>
+            <h3>
+              @if (twoFASetupStep() === 3) {
+                Désactiver le 2FA
+              } @else if (twoFASetupStep() === 4) {
+                Initiation réussie
+              } @else if (twoFASetupStep() === 0) {
+                Activer le 2FA
+              } @else {
+                Configuration 2FA
+              }
+            </h3>
+            <p>
+              @if (twoFASetupStep() === 3 || twoFASetupStep() === 4) {
+                {{ selected2FAEmployee()?.prenom }} {{ selected2FAEmployee()?.nom }}
+              } @else if (twoFASetupStep() === 0) {
+                {{ selected2FAEmployee()?.prenom }} {{ selected2FAEmployee()?.nom }}
+              } @else {
+                {{ selected2FAEmployee()?.prenom }} {{ selected2FAEmployee()?.nom }}
+              }
+            </p>
+          </div>
+        </div>
+        <button (click)="close2FAModal()" class="close-btn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body-scroll">
+        @if (twoFAError()) {
+          <div class="alert alert-danger" style="margin-bottom:16px;padding:12px 16px;background:#fef2f2;border-radius:8px;color:#dc2626;display:flex;align-items:center;gap:8px;">
+            <span class="material-symbols-outlined" style="font-size:20px;">error</span>
+            {{ twoFAError() }}
+          </div>
+        }
+
+        @if (twoFASetupStep() === 1) {
+          <!-- Étape 1 : chargement -->
+          <div class="text-center" style="padding: 40px 20px;">
+            <div class="spinner-border" style="width:48px;height:48px;border:4px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 20px;"></div>
+            <p style="color:#64748b;font-size:16px;">Vérification du statut 2FA...</p>
+          </div>
+        }
+
+        @if (twoFASetupStep() === 0) {
+          <!-- Étape 0 : Proposition d'initiation -->
+          <div class="form-block text-center">
+            <div style="font-size:48px; margin-bottom:16px; color: #0f6b5c;">
+              <span class="material-symbols-outlined" style="font-size:48px;">qr_code_scanner</span>
+            </div>
+            <h3 style="margin-bottom:8px;">Activer la double authentification</h3>
+            <p style="color:#4A6867; margin:12px 0;">
+              Cette action générera un code secret pour <strong>{{ selected2FAEmployee()?.prenom }} {{ selected2FAEmployee()?.nom }}</strong>.
+              L'employé devra ensuite scanner le QR code depuis son espace personnel pour finaliser l'activation.
+            </p>
+            <div style="background:#fefce8; border:1px solid #fef08a; border-radius:8px; padding:12px; margin-top:16px;">
+              <span class="material-symbols-outlined" style="vertical-align:middle; color:#854d0e;">info</span>
+              <span style="font-size:14px; color:#78350f;">L'employé recevra une notification dans le SIRH pour activer son 2FA.</span>
+            </div>
+          </div>
+        }
+
+        @if (twoFASetupStep() === 4) {
+          <!-- Étape 4 : Confirmation d'initiation -->
+          <div class="form-block text-center" style="padding:20px 0;">
+            <div style="font-size:56px; margin-bottom:12px; color: #10b981;">
+              <span class="material-symbols-outlined" style="font-size:56px;">check_circle</span>
+            </div>
+            <h3 style="color:#166534; margin-bottom:8px;">Initiation réussie</h3>
+            <p style="color:#4A6867;">
+              Le 2FA a été initié pour {{ selected2FAEmployee()?.prenom }} {{ selected2FAEmployee()?.nom }}.
+              Il peut maintenant se connecter et activer la double authentification depuis son espace personnel.
+            </p>
+          </div>
+        }
+
+        @if (twoFASetupStep() === 3) {
+          <!-- Étape 3 : Désactivation -->
+          <div class="form-block">
+            <div class="text-center" style="padding:20px 0;">
+              <div style="font-size:64px; margin-bottom:16px; color: #7f0505;">
+                <span class="material-symbols-outlined" style="font-size:64px;">lock</span>
+              </div>
+              <h3 style="margin-bottom:8px;">Le 2FA est actuellement activé</h3>
+              <p style="color:#64748b;">{{ selected2FAEmployee()?.prenom }} {{ selected2FAEmployee()?.nom }} utilise l'authentification à deux facteurs.</p>
+              <p style="color:#94a3b8;font-size:14px;margin-top:8px;">La désactivation du 2FA réduira la sécurité du compte.</p>
+            </div>
+
+            <div style="background:#fef2f2;border-radius:8px;padding:16px;border:1px solid #fecaca;margin-top:16px;">
+              <div style="display:flex;align-items:flex-start;gap:8px;color:#991b1b;">
+                <span class="material-symbols-outlined" style="font-size:20px;">warning</span>
+                <div>
+                  <strong>Attention :</strong>
+                  <p style="margin-top:4px;font-size:14px;color:#7f1d1d;">En désactivant le 2FA, le compte de cet utilisateur ne sera plus protégé par une double authentification.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer-bar">
+        <button class="btn btn-ghost" style="margin-right: auto;" (click)="close2FAModal()">Annuler</button>
+        
+        @if (twoFASetupStep() === 0) {
+          <button class="btn btn-primary" 
+                  (click)="initiateTwoFactorForEmployee()"
+                  [disabled]="isToggling2FA()[selected2FAEmployee()?.id]">
+            <span class="material-symbols-outlined">qr_code_scanner</span>
+            {{ isToggling2FA()[selected2FAEmployee()?.id] ? 'Initiation...' : 'Initier le 2FA' }}
+          </button>
+        }
+
+        @if (twoFASetupStep() === 3) {
+          <button class="btn btn-danger" 
+                  (click)="disableTwoFactorForEmployee(selected2FAEmployee()?.userId || selected2FAEmployee()?.user?.id || selected2FAEmployee()?.user_id)"
+                  [disabled]="isToggling2FA()[selected2FAEmployee()?.id]">
+            <span class="material-symbols-outlined">shield</span>
+            {{ isToggling2FA()[selected2FAEmployee()?.id] ? 'Désactivation...' : 'Désactiver le 2FA' }}
+          </button>
+        }
+
+        @if (twoFASetupStep() === 4) {
+          <button class="btn btn-success" (click)="close2FAModal()">Terminé</button>
+        }
+      </div>
+    </div>
+  </div>
+}
