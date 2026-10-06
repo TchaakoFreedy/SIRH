@@ -6,7 +6,7 @@ import { Departement } from '../models/departement.model';
 
 @Injectable({ providedIn: 'root' })
 export class DepartementService {
-  private url = `${environment.apiUrl}/departements`;
+  private url = `${environment.apiUrl}/api/departements`;
 
   constructor(private http: HttpClient) {}
 

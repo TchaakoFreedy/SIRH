@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface Role {
   id: string;
@@ -13,7 +14,7 @@ export interface Role {
   providedIn: 'root'
 })
 export class RoleService {
-  private apiUrl = 'http://localhost:8080/api/roles'; // Adapte l'URL selon ton contrôleur Spring Boot
+  private apiUrl = `${environment.apiUrl}/api/roles`;
 
   constructor(private http: HttpClient) {}
 

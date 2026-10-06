@@ -2,110 +2,74 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, catchError, retry, map } from 'rxjs';
 import { Poste, CreatePosteRequest, UpdatePosteRequest } from '../models/poste.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PostesService {
-  private apiUrl = 'http://localhost:8080/api/postes';
+  private apiUrl = `${environment.apiUrl}/api/postes`;
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Récupérer tous les postes
-   */
   getAll(): Observable<Poste[]> {
-    return this.http.get<Poste[]>(this.apiUrl)
-      .pipe(
-        retry(1),
-        catchError(this.handleError)
-      );
+    return this.http.get<Poste[]>(this.apiUrl).pipe(
+      retry(1),
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Récupérer uniquement les postes actifs
-   */
   getActive(): Observable<Poste[]> {
-    return this.http.get<Poste[]>(`${this.apiUrl}/active`)
-      .pipe(
-        retry(1),
-        catchError(this.handleError)
-      );
+    return this.http.get<Poste[]>(`${this.apiUrl}/active`).pipe(
+      retry(1),
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Récupérer un poste par son ID
-   */
   getById(id: string): Observable<Poste> {
-    return this.http.get<Poste>(`${this.apiUrl}/${id}`)
-      .pipe(
-        retry(1),
-        catchError(this.handleError)
-      );
+    return this.http.get<Poste>(`${this.apiUrl}/${id}`).pipe(
+      retry(1),
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Créer un nouveau poste
-   */
   create(poste: CreatePosteRequest): Observable<Poste> {
-    return this.http.post<Poste>(this.apiUrl, poste)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http.post<Poste>(this.apiUrl, poste).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Mettre à jour un poste
-   */
   update(id: string, poste: UpdatePosteRequest): Observable<Poste> {
-    return this.http.put<Poste>(`${this.apiUrl}/${id}`, poste)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http.put<Poste>(`${this.apiUrl}/${id}`, poste).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Supprimer un poste
-   */
   delete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Basculer le statut actif/inactif d'un poste
-   */
   toggleActive(id: string): Observable<Poste> {
-    return this.http.patch<Poste>(`${this.apiUrl}/${id}/toggle`, {})
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http.patch<Poste>(`${this.apiUrl}/${id}/toggle`, {}).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Récupérer les postes par département
-   */
   getByDepartement(departementId: string): Observable<Poste[]> {
-    return this.http.get<Poste[]>(`${this.apiUrl}/departement/${departementId}`)
-      .pipe(
-        retry(1),
-        catchError(this.handleError)
-      );
+    return this.http.get<Poste[]>(`${this.apiUrl}/departement/${departementId}`).pipe(
+      retry(1),
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Gestion des erreurs HTTP
-   */
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'Une erreur inattendue est survenue';
 
     if (error.error instanceof ErrorEvent) {
-      // Erreur côté client
       errorMessage = `Erreur réseau: ${error.error.message}`;
     } else {
-      // Erreur côté serveur
       switch (error.status) {
         case 0:
           errorMessage = 'Impossible de se connecter au serveur';

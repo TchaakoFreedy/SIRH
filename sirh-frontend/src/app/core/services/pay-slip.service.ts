@@ -11,7 +11,7 @@ import { PaySlip, PaySlipUploadResponse } from '../models/pay-slip.model';
   providedIn: 'root'
 })
 export class PaySlipService {
-  private apiUrl = `${environment.apiUrl}/pay-slips`;
+  private apiUrl = `${environment.apiUrl}/api/pay-slips`;
   private debug = false;
   private activeUploads = new Map<string, Observable<PaySlipUploadResponse>>();
   private uploadStates = new Map<string, boolean>();
@@ -25,7 +25,7 @@ export class PaySlipService {
   }
 
   getBaseUrl(): string {
-    return environment.apiUrl.replace('/api', '');
+    return environment.apiUrl;
   }
 
   upload(file: File, idempotencyKey: string): Observable<PaySlipUploadResponse> {
@@ -131,9 +131,9 @@ export class PaySlipService {
 
   downloadPdf(id: string): void {
     if (!id) return;
-    
+
     const url = `${this.apiUrl}/${id}/download`;
-    
+
     this.http.get(url, {
       responseType: 'blob',
       headers: new HttpHeaders().set('Accept', 'application/pdf')
@@ -165,7 +165,7 @@ export class PaySlipService {
 
   downloadPage(id: string, pageNumber: number): void {
     const url = `${this.apiUrl}/${id}/download/page/${pageNumber}`;
-    
+
     this.http.get(url, {
       responseType: 'blob'
     }).subscribe({
@@ -196,11 +196,11 @@ export class PaySlipService {
   getImageWithAuth(imageUrl: string, retries: number = 3): Observable<Blob> {
     const fullUrl = this.getImageUrl(imageUrl);
     const headers = new HttpHeaders().set('Authorization', `Bearer ${localStorage.getItem('access_token')}`);
-    
-    return this.http.get(fullUrl, { 
-      headers, 
-      responseType: 'blob', 
-      observe: 'body' 
+
+    return this.http.get(fullUrl, {
+      headers,
+      responseType: 'blob',
+      observe: 'body'
     }).pipe(
       timeout(30000),
       retry(retries),
@@ -219,7 +219,7 @@ export class PaySlipService {
 
   getImageBlob(imageUrl: string): Observable<Blob> {
     const fullUrl = this.getImageUrl(imageUrl);
-    return this.http.get(fullUrl, { 
+    return this.http.get(fullUrl, {
       responseType: 'blob',
       observe: 'body'
     }).pipe(
@@ -234,8 +234,8 @@ export class PaySlipService {
 
     if (error instanceof TimeoutError) {
       userMessage = 'Request timed out. Please try again.';
-      return throwError(() => ({ 
-        status: 408, 
+      return throwError(() => ({
+        status: 408,
         message: userMessage,
         error: 'TIMEOUT'
       }));

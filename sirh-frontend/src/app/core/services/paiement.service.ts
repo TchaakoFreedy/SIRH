@@ -14,7 +14,7 @@ import { Employee } from '../models/employee.model';
 @Injectable({ providedIn: 'root' })
 export class PaiementService {
 
-  private url = `${environment.apiUrl}/paiements`;
+  private url = `${environment.apiUrl}/api/paiements`;
 
   constructor(private http: HttpClient) {}
 

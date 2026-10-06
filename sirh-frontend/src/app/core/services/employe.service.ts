@@ -9,15 +9,11 @@ import { Document } from '../models/document.model';
 
 @Injectable({ providedIn: 'root' })
 export class EmployeService {
-  private url = `${environment.apiUrl}/employees`;
-  private docUrl = `${environment.apiUrl}/documents-management`;
-  private profileUrl = `${environment.apiUrl}/profile`;
+  private url = `${environment.apiUrl}/api/employees`;
+  private docUrl = `${environment.apiUrl}/api/documents-management`;
+  private profileUrl = `${environment.apiUrl}/api/profile`;
 
   constructor(private http: HttpClient) {}
-
-  // ============================================
-  // GESTION DES EMPLOYÉS (CRUD)
-  // ============================================
 
   getAll(): Observable<Employee[]> {
     return this.http.get<Employee[]>(this.url);
@@ -63,9 +59,9 @@ export class EmployeService {
     return this.http.patch<Employee>(`${this.url}/${id}/profile`, data);
   }
 
-updateMyProfile(data: { telephone: string; addresse: string; numeroContactUrgence?: string }): Observable<Employee> {
-  return this.http.patch<Employee>(`${this.profileUrl}`, data);
-}
+  updateMyProfile(data: { telephone: string; addresse: string; numeroContactUrgence?: string }): Observable<Employee> {
+    return this.http.patch<Employee>(`${this.profileUrl}`, data);
+  }
 
   getMyProfile(): Observable<Employee> {
     return this.http.get<Employee>(`${this.profileUrl}`);
@@ -75,10 +71,6 @@ updateMyProfile(data: { telephone: string; addresse: string; numeroContactUrgenc
     return this.http.delete<void>(`${this.url}/${id}`);
   }
 
-  // ============================================
-  // ACTIONS STATUT
-  // ============================================
-
   suspendre(id: string): Observable<Employee> {
     return this.http.post<Employee>(`${this.url}/${id}/suspendre`, {});
   }
@@ -86,10 +78,6 @@ updateMyProfile(data: { telephone: string; addresse: string; numeroContactUrgenc
   reactiver(id: string): Observable<Employee> {
     return this.http.post<Employee>(`${this.url}/${id}/reactiver`, {});
   }
-
-  // ============================================
-  // RECHERCHE ET FILTRES
-  // ============================================
 
   search(term: string): Observable<Employee[]> {
     return this.http.get<Employee[]>(
@@ -109,10 +97,6 @@ updateMyProfile(data: { telephone: string; addresse: string; numeroContactUrgenc
     return this.http.get<Employee[]>(`${this.url}/statut/${statut}`);
   }
 
-  // ============================================
-  // SÉCURITÉ
-  // ============================================
-
   changePassword(id: string, data: { ancienMotDePasse: string; nouveauMotDePasse: string }): Observable<any> {
     return this.http.post(`${this.url}/${id}/change-password`, data);
   }
@@ -125,35 +109,19 @@ updateMyProfile(data: { telephone: string; addresse: string; numeroContactUrgenc
     return this.http.post<Employee>(`${this.url}/${id}/photo`, formData);
   }
 
-  // ============================================
-  // STATISTIQUES
-  // ============================================
-
   getStats(id: string): Observable<any> {
     return this.http.get(`${this.url}/${id}/stats`);
   }
 
-  /**
-   * Récupère l'historique d'un employé (liste des événements)
-   */
   getHistory(id: string): Observable<any> {
     return this.http.get<any>(`${this.url}/${id}/history`);
   }
 
-  /**
-   * Télécharge l'historique d'un employé au format CSV ou PDF
-   * @param employeeId - ID de l'employé
-   * @param format - 'csv' ou 'pdf'
-   */
   downloadHistory(employeeId: string, format: 'csv' | 'pdf' = 'csv'): Observable<Blob> {
     return this.http.get(`${this.url}/${employeeId}/history/download?format=${format}`, {
       responseType: 'blob'
     });
   }
-
-  // ============================================
-  // GESTION DES DOCUMENTS
-  // ============================================
 
   getEmployeeDocuments(employeeId: string): Observable<Document[]> {
     return this.http.get<Document[]>(`${this.url}/${employeeId}/documents`);
@@ -188,7 +156,7 @@ updateMyProfile(data: { telephone: string; addresse: string; numeroContactUrgenc
     const formData = new FormData();
     formData.append('employeeId', employeeId);
     formData.append('typeDocument', typeDocument);
-    
+
     files.forEach(file => {
       formData.append('files', file);
     });

@@ -14,11 +14,10 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class ContratService {
-  private baseUrl = `${environment.apiUrl}/contrats`;
+  private baseUrl = `${environment.apiUrl}/api/contrats`;
 
   constructor(private http: HttpClient) {}
 
-  // Création avec fichiers + flag replaceActive
   createContrat(request: CreateContratRequest, files?: File[], replaceActive: boolean = false): Observable<Contrat> {
     const requestWithFlag = { ...request, replaceActive };
     const formData = new FormData();
@@ -29,19 +28,16 @@ export class ContratService {
     return this.http.post<Contrat>(this.baseUrl, formData);
   }
 
-  // Alias pour compatibilité (utilisé dans le wizard employé)
   createContratWithImages(formData: FormData): Observable<Contrat> {
     return this.http.post<Contrat>(this.baseUrl, formData);
   }
 
-  // Upload d'images
   uploadImages(id: string, files: File[]): Observable<Contrat> {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
     return this.http.post<Contrat>(`${this.baseUrl}/${id}/images`, formData);
   }
 
-  // Récupération
   getAll(): Observable<Contrat[]> {
     return this.http.get<Contrat[]>(this.baseUrl);
   }
@@ -120,7 +116,6 @@ export class ContratService {
     return this.http.post<any>(`${this.baseUrl}/check-expiring`, {});
   }
 
-  // Avenant
   createAvenant(avenantData: any): Observable<Contrat> {
     return this.http.post<Contrat>(`${this.baseUrl}/avenant`, avenantData);
   }

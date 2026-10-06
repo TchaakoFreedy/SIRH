@@ -17,7 +17,7 @@ export interface User {
   createdAt: string;
   createdBy: string;
   role?: Role;
-  employeeId?: string; // ✅ AJOUTÉ - Propriété manquante
+  employeeId?: string;
 }
 
 export interface Role {
@@ -37,21 +37,15 @@ export interface Role {
 })
 export class UserService {
   private http = inject(HttpClient);
-  private baseUrl = environment.apiUrl;
-  
+  private baseUrl = `${environment.apiUrl}/api`;
+
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
 
-  /**
-   * Récupère tous les utilisateurs
-   */
   getUsers(): Observable<User[]> {
     return this.http.get<User[]>(`${this.baseUrl}/users`);
   }
 
-  /**
-   * Récupère un utilisateur par son ID
-   */
   getUser(id: string): Observable<User> {
     return this.http.get<User>(`${this.baseUrl}/users/${id}`).pipe(
       tap(user => {
@@ -67,30 +61,18 @@ export class UserService {
     );
   }
 
-  /**
-   * Récupère le rôle par ID
-   */
   getRole(roleId: string): Observable<Role> {
     return this.http.get<Role>(`${this.baseUrl}/roles/${roleId}`);
   }
 
-  /**
-   * Met à jour un utilisateur
-   */
   updateUser(id: string, userData: Partial<User>): Observable<User> {
     return this.http.put<User>(`${this.baseUrl}/users/${id}`, userData);
   }
 
-  /**
-   * Active/Désactive un utilisateur
-   */
   toggleUserStatus(id: string): Observable<any> {
     return this.http.patch(`${this.baseUrl}/users/${id}/toggle-status`, {});
   }
 
-  /**
-   * Récupère l'utilisateur courant depuis le localStorage
-   */
   getCurrentUser(): User | null {
     const stored = localStorage.getItem('currentUser');
     if (stored) {
@@ -103,24 +85,15 @@ export class UserService {
     return null;
   }
 
-  /**
-   * Définit l'utilisateur courant
-   */
   setCurrentUser(user: User): void {
     localStorage.setItem('currentUser', JSON.stringify(user));
     this.currentUserSubject.next(user);
   }
 
-  /**
-   * Récupère le nom complet de l'utilisateur
-   */
   getFullName(user: User): string {
     return `${user.firstName} ${user.lastName}`;
   }
 
-  /**
-   * Récupère les initiales de l'utilisateur
-   */
   getInitials(user: User): string {
     if (!user) return 'UT';
     const first = user.firstName ? user.firstName.charAt(0) : '';
@@ -128,9 +101,6 @@ export class UserService {
     return (first + last).toUpperCase() || 'UT';
   }
 
-  /**
-   * Traduit le rôle en français
-   */
   getRoleLabel(roleName: string): string {
     const roleMap: { [key: string]: string } = {
       'SUPER_ADMIN': 'Administrateur',
@@ -143,9 +113,6 @@ export class UserService {
     return roleMap[roleName] || roleName || 'Utilisateur';
   }
 
-  /**
-   * Récupère la couleur du rôle
-   */
   getRoleColor(roleName: string): string {
     const colorMap: { [key: string]: string } = {
       'SUPER_ADMIN': '#8b5cf6',
