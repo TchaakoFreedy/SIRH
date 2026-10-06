@@ -16,7 +16,7 @@ import { PeriodeEvaluation } from '../models/periode-evaluation.enum';
 
 @Injectable({ providedIn: 'root' })
 export class PerformanceService {
-  private baseUrl = `${environment.apiUrl}/performance`;
+  private baseUrl = `${environment.apiUrl}/api/performance`;
 
   constructor(private http: HttpClient) {}
 
@@ -136,7 +136,6 @@ export class PerformanceService {
     return this.http.get<ClassementDTO>(`${this.baseUrl}/classement/my-rank?annee=${annee}`);
   }
 
-  // ✅ Mise à jour de createEvaluation pour accepter critereIds
   createEvaluation(data: {
     employeId: string;
     periode: PeriodeEvaluation;
@@ -144,7 +143,7 @@ export class PerformanceService {
     mois?: number;
     commentaires?: string;
     notes: Array<{ critereId: string; note: number }>;
-    critereIds?: string[];   // ✅ AJOUT
+    critereIds?: string[];
   }): Observable<EvaluationPerformance> {
     return this.http.post<EvaluationPerformance>(`${this.baseUrl}/evaluations`, data);
   }

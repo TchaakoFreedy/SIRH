@@ -60,8 +60,8 @@ export interface TwoFactorSession {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  private apiUrl = `${environment.apiUrl}/auth`;
-  
+  private apiUrl = `${environment.apiUrl}/api/auth`;
+
   private readonly TOKEN_KEY = 'access_token';
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly USER_KEY = 'currentUser';
@@ -90,8 +90,8 @@ export class AuthService {
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
-        if (user.token !== token) { 
-          user.token = token; 
+        if (user.token !== token) {
+          user.token = token;
         }
         return user;
       } catch (e) {
@@ -108,7 +108,7 @@ export class AuthService {
 
   verifyTwoFactor(userId: string, otpCode: number): Observable<LoginResponse> {
     console.log(`Verification 2FA pour userId: ${userId}`);
-    
+
     return this.http.post<LoginResponse>(`${this.apiUrl}/verify-2fa`, { userId, otpCode }).pipe(
       tap({
         next: (response) => {
@@ -142,7 +142,7 @@ export class AuthService {
   getTwoFactorSession(): TwoFactorSession | null {
     const sessionStr = localStorage.getItem(this.TWO_FA_SESSION_KEY);
     if (!sessionStr) return null;
-    
+
     try {
       const session: TwoFactorSession = JSON.parse(sessionStr);
       if (session.expiresAt && Date.now() > session.expiresAt) {
@@ -191,20 +191,14 @@ export class AuthService {
   // Traitement de la réponse login
   // =========================
 
-  /**
-   * Traite la réponse de login et stocke les données appropriées.
-   * Gère les cas : token direct, 2FA requis, 2FA en attente.
-   */
   handleLoginResponse(response: LoginResponse): void {
     console.log('Handling login response:', response);
 
-    // Cas 1 : token présent -> login complet
     if (response.accessToken) {
       this.handleSuccessfulLogin(response);
       return;
     }
 
-    // Cas 2 : 2FA requis (déjà activé)
     if (response.twoFactorRequired === true) {
       console.log('2FA requis pour l\'utilisateur');
       if (response.userId && response.email) {
@@ -214,7 +208,6 @@ export class AuthService {
       return;
     }
 
-    // Cas 3 : 2FA en attente (secret généré par RH)
     if (response.twoFactorPending === true) {
       console.log('2FA en attente d\'activation');
       this.setTwoFactorPending(true);
@@ -241,7 +234,7 @@ export class AuthService {
 
   login(email: string, password: string): Observable<LoginResponse> {
     console.log(`Tentative de login pour: ${email}`);
-    
+
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
       tap({
         next: (response) => {
@@ -264,33 +257,33 @@ export class AuthService {
 
   handleSuccessfulLogin(response: LoginResponse): void {
     console.log('Handling successful login...');
-    
+
     if (!response || !response.accessToken) {
       console.error('Response invalide ou token manquant');
       return;
     }
 
     const token = response.accessToken;
-    
+
     localStorage.setItem(this.TOKEN_KEY, token);
     localStorage.setItem('token', token);
     localStorage.setItem('jwt', token);
-    
+
     if (response.refreshToken) {
       localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refreshToken);
     }
 
     const backendUser = response.user || {};
-    const roleName = response.roleName 
+    const roleName = response.roleName
                   || backendUser.roleName
-                  || backendUser.role 
-                  || backendUser.roles?.[0] 
+                  || backendUser.role
+                  || backendUser.roles?.[0]
                   || 'EMPLOYEE';
 
     const roleLevel = response.roleLevel ?? backendUser.roleLevel ?? 0;
-    const permissions = response.permissions 
-                     || backendUser.permissions 
-                     || backendUser.authorities 
+    const permissions = response.permissions
+                     || backendUser.permissions
+                     || backendUser.authorities
                      || [];
 
     const matriculeInterne = backendUser.matriculeInterne ||
@@ -338,8 +331,8 @@ export class AuthService {
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
-        if (user.token !== token) { 
-          user.token = token; 
+        if (user.token !== token) {
+          user.token = token;
         }
         this.currentUserSubject.next(user);
         console.log('Utilisateur charge depuis le storage');
@@ -353,7 +346,7 @@ export class AuthService {
   refreshToken(): Observable<LoginResponse> {
     const refreshToken = this.getRefreshToken();
     console.log('Tentative de refresh token...');
-    
+
     if (!refreshToken) {
       console.warn('Pas de refresh token disponible');
       return throwError(() => new Error('No refresh token'));
@@ -468,23 +461,23 @@ export class AuthService {
   isTokenValid(): boolean {
     const token = this.getToken();
     if (!token) return false;
-    
+
     try {
       const parts = token.split('.');
       if (parts.length !== 3) {
         console.warn('Token format invalide');
         return false;
       }
-      
+
       const payload = JSON.parse(atob(parts[1]));
       const expiryTime = payload.exp * 1000;
       const now = Date.now();
       const isValid = expiryTime > now;
-      
+
       if (!isValid) {
         console.warn(`Token expire: ${new Date(expiryTime).toLocaleString()} < ${new Date(now).toLocaleString()}`);
       }
-      
+
       return isValid;
     } catch (e) {
       console.error('Token invalide:', e);
@@ -506,11 +499,11 @@ export class AuthService {
     let token = localStorage.getItem(this.TOKEN_KEY);
     if (!token) token = localStorage.getItem('token');
     if (!token) token = localStorage.getItem('jwt');
-    
+
     if (token && !localStorage.getItem(this.TOKEN_KEY)) {
       localStorage.setItem(this.TOKEN_KEY, token);
     }
-    
+
     return token;
   }
 
@@ -567,7 +560,7 @@ export class AuthService {
   private listenToStorageChanges(): void {
     window.addEventListener('storage', (event) => {
       console.log(`Storage change: ${event.key}`);
-      
+
       if (event.key === this.TOKEN_KEY || event.key === 'token' || event.key === 'jwt') {
         const newToken = this.getToken();
         if (!newToken) {
@@ -578,7 +571,7 @@ export class AuthService {
           this.loadStoredUser();
         }
       }
-      
+
       if (event.key === this.USER_KEY && !localStorage.getItem(this.USER_KEY)) {
         console.warn('Utilisateur supprime dans un autre onglet.');
         this.clearAuthDataSilently();

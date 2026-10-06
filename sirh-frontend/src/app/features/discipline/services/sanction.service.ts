@@ -9,7 +9,7 @@ import { Page } from '../../../shared/models/page.model';
 
 @Injectable({ providedIn: 'root' })
 export class SanctionService {
-  private baseUrl = `${environment.apiUrl}/discipline`;
+  private baseUrl = `${environment.apiUrl}/api/discipline`;
 
   constructor(private http: HttpClient) {}
 
