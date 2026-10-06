@@ -4,31 +4,28 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Entreprise, EntreprisePayload } from '../models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EntrepriseService {
-  private apiUrl = 'http://localhost:8080/api/entreprises';
+  private apiUrl = `${environment.apiUrl}/api/entreprises`;
 
   constructor(private http: HttpClient) {}
 
-  // ✅ Récupérer toutes les entreprises (Admin/RH uniquement)
   getAll(): Observable<Entreprise[]> {
     return this.http.get<Entreprise[]>(this.apiUrl);
   }
 
-  // ✅ Récupérer une entreprise par son ID
   getById(id: string): Observable<Entreprise> {
     return this.http.get<Entreprise>(`${this.apiUrl}/${id}`);
   }
 
-  // ✅ Récupérer l'entreprise par ID employé (Sécurisé pour tous les rôles)
   getByEmployeeId(employeeId: string): Observable<Entreprise> {
     return this.http.get<Entreprise>(`${this.apiUrl}/by-employee/${employeeId}`);
   }
 
-  // ✅ Récupérer l'entreprise de l'employé connecté
   getMyEntreprise(employeeId: string): Observable<Entreprise> {
     return this.http.get<Entreprise>(`${this.apiUrl}/my-entreprise?employeeId=${employeeId}`);
   }

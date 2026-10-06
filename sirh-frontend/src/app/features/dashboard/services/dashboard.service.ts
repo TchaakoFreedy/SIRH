@@ -7,6 +7,7 @@ import { DashboardDirectionResponse } from '../models/dashboard-direction.model'
 import { DashboardManagerResponse } from '../models/dashboard-manager.model';
 import { DashboardEmployeeResponse } from '../models/dashboard-employee.model';
 import { AuthService } from '../../../services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 import { DisciplineService } from '../../../features/discipline/services/discipline.service';
 import { SanctionService } from '../../../features/discipline/services/sanction.service';
@@ -16,7 +17,7 @@ import { StatutSanction } from '../../../features/discipline/models/sanction.mod
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
-  private baseUrl = '/api/dashboard';
+  private baseUrl = `${environment.apiUrl}/api/dashboard`;
 
   constructor(
     private http: HttpClient,
