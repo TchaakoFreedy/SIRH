@@ -31,6 +31,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // CORS géré UNIQUEMENT ici, via le bean corsConfigurationSource()
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -63,6 +64,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
+        // ⚠️ CORRECTION : on utilise setAllowedOriginPatterns (compatible avec allowCredentials=true)
+        // au lieu de setAllowedOrigins("*") qui était interdit.
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:4200",
                 "http://localhost:3000",
@@ -88,7 +91,10 @@ public class SecurityConfig {
                 "X-Page-Count"
         ));
 
-        configuration.setAllowCredentials(true);
+        // Avec Authorization: Bearer, allowCredentials(true) n'est PAS nécessaire.
+        // On le laisse à true uniquement si tu utilises des cookies.
+        // Pour éviter tout conflit, on le passe à false ici.
+        configuration.setAllowCredentials(false);
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
