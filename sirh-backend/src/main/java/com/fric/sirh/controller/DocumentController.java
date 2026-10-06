@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/documents-management")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class DocumentController {
 
     private final DocumentService documentService;

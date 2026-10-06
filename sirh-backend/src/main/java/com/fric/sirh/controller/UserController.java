@@ -13,7 +13,7 @@ import java.util.List;
 @Slf4j // Add this annotation to enable logging
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin("*")
+
 @RequiredArgsConstructor
 public class UserController {
 

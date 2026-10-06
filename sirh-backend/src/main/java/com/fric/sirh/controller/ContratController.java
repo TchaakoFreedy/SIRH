@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/contrats")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class ContratController {
 
     private final ContratService contratService;

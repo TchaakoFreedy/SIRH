@@ -19,7 +19,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/departements")
-@CrossOrigin("*")
+
 @RequiredArgsConstructor
 public class DepartementController {
 

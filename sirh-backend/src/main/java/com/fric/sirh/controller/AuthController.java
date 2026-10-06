@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin("*")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -28,7 +27,7 @@ public class AuthController {
         return ResponseEntity.ok(authService.verifyTwoFactor(request.getUserId(), request.getOtpCode()));
     }
 
-    @PostMapping("/refresh-token")  // ✅ Changed from "/refresh" to "/refresh-token"
+    @PostMapping("/refresh-token")
     public ResponseEntity<AuthResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
         log.info("🔄 Refresh token request received");
         return ResponseEntity.ok(authService.refreshAccessToken(request));

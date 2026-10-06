@@ -16,7 +16,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/configurations/conges")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ConfigurationCongeController {
 
     private final ConfigurationCongeService service;
@@ -69,10 +68,6 @@ public class ConfigurationCongeController {
         }
     }
 
-    /**
-     * ✅ Récupère la configuration pour un employé (lecture seule)
-     * Retourne : Individuelle > Genre > Globale > Défaut
-     */
     @GetMapping("/employee/{employeeId}")
     @PreAuthorize("hasAuthority('SYSTEM_ADMIN') or hasAuthority('RH') or hasAuthority('LEAVE_VIEW_OWN')")
     public ResponseEntity<ConfigurationConge> getForEmployee(@PathVariable String employeeId) {
@@ -91,9 +86,6 @@ public class ConfigurationCongeController {
         }
     }
 
-    /**
-     * ✅ Récupère ou crée une configuration individuelle pour un employé (pour modification)
-     */
     @GetMapping("/employee/{employeeId}/individual")
     @PreAuthorize("hasAuthority('SYSTEM_ADMIN') or hasAuthority('RH') or hasAuthority('LEAVE_VIEW_OWN')")
     public ResponseEntity<ConfigurationConge> getOrCreateIndividual(@PathVariable String employeeId) {
@@ -109,15 +101,11 @@ public class ConfigurationCongeController {
         }
     }
 
-    /**
-     * ✅ Met à jour une configuration individuelle
-     */
     @PutMapping("/individual/{id}")
     @PreAuthorize("hasAuthority('SYSTEM_ADMIN') or hasAuthority('RH')")
     public ResponseEntity<?> updateIndividual(@PathVariable String id, @RequestBody ConfigurationConge config) {
         log.info("📥 PUT /api/configurations/conges/individual/{} - Corps reçu : {}", id, config);
         try {
-            // Vérifier que c'est bien une configuration individuelle
             ConfigurationConge existing = service.getById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("ConfigurationConge", id));
 
@@ -125,7 +113,6 @@ public class ConfigurationCongeController {
                 return ResponseEntity.badRequest().body("Cette configuration n'est pas une configuration individuelle");
             }
 
-            // S'assurer que l'employeeId correspond
             if (config.getEmployeeId() != null && !config.getEmployeeId().equals(existing.getEmployeeId())) {
                 return ResponseEntity.badRequest().body("L'ID employé ne correspond pas à la configuration");
             }

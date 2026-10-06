@@ -27,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 @RequestMapping("/api/conges")
-@CrossOrigin("*")
 public class CongeController {
 
     private final CongeService service;

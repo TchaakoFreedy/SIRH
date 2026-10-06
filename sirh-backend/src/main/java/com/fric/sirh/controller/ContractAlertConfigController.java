@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/contract-alert-configs")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ContractAlertConfigController {
 
     private final ContractAlertConfigService configService;
@@ -59,7 +58,6 @@ public class ContractAlertConfigController {
             config.setEmailBodyTemplate(request.getEmailBodyTemplate());
         }
 
-        // Mise à jour des champs de suivi
         config.setUpdatedBy(userId);
         config.setUpdatedAt(LocalDateTime.now());
 
@@ -82,16 +80,9 @@ public class ContractAlertConfigController {
         return dto;
     }
 
-    /**
-     * Extrait l'identifiant de l'utilisateur courant depuis le contexte de sécurité.
-     * Adaptez cette méthode selon la structure de vos UserDetails.
-     */
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
-            // Si vous utilisez CustomUserDetails avec un champ userId, récupérez-le.
-            // Exemple: ((CustomUserDetails) authentication.getPrincipal()).getId();
-            // Par défaut, on retourne le nom d'utilisateur (email)
             return authentication.getName();
         }
         return "UNKNOWN";

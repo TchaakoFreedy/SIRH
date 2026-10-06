@@ -37,7 +37,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/employees")
-@CrossOrigin(origins = "http://localhost:4200")
+
 public class EmployeeController {
 
     private static final Logger log = LoggerFactory.getLogger(EmployeeController.class);

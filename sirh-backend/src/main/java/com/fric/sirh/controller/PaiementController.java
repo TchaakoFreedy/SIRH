@@ -22,7 +22,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/paiements")
-@CrossOrigin(origins = "http://localhost:4200")
+
 public class PaiementController {
 
     private static final Logger log =

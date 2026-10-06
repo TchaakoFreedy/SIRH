@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@CrossOrigin("*")
+
 public class UserPermissionController {
 
     private final UserPermissionService userPermissionService;
