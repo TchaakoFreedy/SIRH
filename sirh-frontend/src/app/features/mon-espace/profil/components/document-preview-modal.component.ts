@@ -405,7 +405,8 @@ export interface DocumentPreviewData {
   `]
 })
 export class DocumentPreviewModalComponent implements OnInit, OnChanges {
-  private apiUrl = environment.apiUrl;
+  // ✅ CORRECTION : /api ajouté ici
+  private apiUrl = `${environment.apiUrl}/api`;
   private readonly TOKEN_KEY = 'access_token';
 
   @Input() isOpen = false;
