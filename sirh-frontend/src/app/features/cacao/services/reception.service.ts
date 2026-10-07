@@ -8,7 +8,8 @@ import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ReceptionService {
-  private baseUrl = `${environment.apiUrl}/cacao/receptions`;
+  // ✅ /api ajouté ici
+  private baseUrl = `${environment.apiUrl}/api/cacao/receptions`;
 
   constructor(private http: HttpClient) {}
 
