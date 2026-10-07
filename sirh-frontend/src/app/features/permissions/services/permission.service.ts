@@ -10,13 +10,13 @@ import { environment } from '../../../../environments/environment';
   providedIn: 'root'
 })
 export class PermissionService {
-  // ✅ CORRECTION : environment.apiUrl contient déjà '/api'
-  private apiUrl = environment.apiUrl;
+  // ✅ /api ajouté ici (environment.apiUrl ne le contient pas)
+  private apiUrl = `${environment.apiUrl}/api`;
 
   constructor(private http: HttpClient) {}
 
   getAllPermissions(): Observable<Permission[]> {
-    return this.http.get<Permission[]>(`${this.apiUrl}/permissions`); // ✅ Plus de /api en double
+    return this.http.get<Permission[]>(`${this.apiUrl}/permissions`);
   }
 
   getPermissionById(id: string): Observable<Permission> {
