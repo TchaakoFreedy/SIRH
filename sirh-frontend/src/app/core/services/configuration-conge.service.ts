@@ -9,7 +9,8 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class ConfigurationCongeService {
-  private apiUrl = `${environment.apiUrl}/configurations/conges`;
+  // ✅ /api ajouté ici
+  private apiUrl = `${environment.apiUrl}/api/configurations/conges`;
 
   constructor(
     private http: HttpClient,
