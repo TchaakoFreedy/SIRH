@@ -12,8 +12,8 @@ import { environment } from '../../../../environments/environment';
   providedIn: 'root'
 })
 export class RoleService {
-  // ✅ CORRECTION : environment.apiUrl contient déjà '/api'
-  private apiUrl = environment.apiUrl;
+  // ✅ /api ajouté ici (environment.apiUrl ne le contient pas)
+  private apiUrl = `${environment.apiUrl}/api`;
 
   constructor(
     private http: HttpClient,
@@ -21,7 +21,7 @@ export class RoleService {
   ) {}
 
   getAllRoles(): Observable<Role[]> {
-    return this.http.get<Role[]>(`${this.apiUrl}/roles`); // ✅ Plus de /api en double
+    return this.http.get<Role[]>(`${this.apiUrl}/roles`);
   }
 
   getRoleById(id: string): Observable<Role> {
