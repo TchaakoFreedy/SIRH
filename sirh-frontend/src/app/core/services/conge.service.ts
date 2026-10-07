@@ -10,7 +10,8 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class CongeService {
-  private apiUrl = `${environment.apiUrl}/conges`;
+  // ✅ /api ajouté ici
+  private apiUrl = `${environment.apiUrl}/api/conges`;
 
   constructor(
     private http: HttpClient,
@@ -53,7 +54,7 @@ export class CongeService {
    */
   getCongesByDepartement(statut?: string, type?: string): Observable<Conge[]> {
     console.log('📥 Récupération des congés du département...');
-    
+
     let params = new HttpParams();
     if (statut && statut !== 'TOUS') {
       params = params.set('statut', statut);
@@ -61,8 +62,8 @@ export class CongeService {
     if (type && type !== 'TOUS') {
       params = params.set('type', type);
     }
-    
-    return this.http.get<Conge[]>(`${this.apiUrl}/departement`, { 
+
+    return this.http.get<Conge[]>(`${this.apiUrl}/departement`, {
       headers: this.getHeaders(),
       params: params
     }).pipe(catchError(this.handleError));
@@ -73,7 +74,7 @@ export class CongeService {
    */
   getTeamMembers(): Observable<any[]> {
     console.log('📥 Récupération des membres de l\'équipe...');
-    return this.http.get<any[]>(`${this.apiUrl}/team/members`, { 
+    return this.http.get<any[]>(`${this.apiUrl}/team/members`, {
       headers: this.getHeaders()
     }).pipe(catchError(this.handleError));
   }
@@ -101,10 +102,10 @@ export class CongeService {
     switch (type) {
       case TypeConge.PERMISSION:
         return this.requestPermission(data);
-      
+
       case TypeConge.ABSENCE:
         return this.signalAbsence(data);
-      
+
       case TypeConge.ANNUEL:
       default:
         const request = {
@@ -134,7 +135,7 @@ export class CongeService {
       jourFin: data.jourFin,
       motif: data.motif || data.commentaireManager || 'Absence signalée'
     };
-    
+
     console.log('📤 Signalement absence avec ID MongoDB:', employeeId);
     return this.http.post<Conge>(`${this.apiUrl}/absence`, request, { headers: this.getHeaders() })
       .pipe(catchError(this.handleError));
@@ -155,10 +156,10 @@ export class CongeService {
       jourFin: data.jourFin,
       motif: data.motif || data.commentaireManager || 'Permission demandée'
     };
-    
+
     console.log('📤 Demande permission avec ID MongoDB:', employeeId);
     console.log('🔔 La permission sera en attente de validation manager');
-    
+
     return this.http.post<Conge>(`${this.apiUrl}/permission`, request, { headers: this.getHeaders() })
       .pipe(catchError(this.handleError));
   }
@@ -188,7 +189,7 @@ export class CongeService {
     if (!managerId) {
       return throwError(() => new Error('Utilisateur non identifié. Veuillez vous reconnecter.'));
     }
-    
+
     const request = { managerId, commentaire };
     return this.http.patch<Conge>(`${this.apiUrl}/${id}/approve`, request, { headers: this.getHeaders() })
       .pipe(catchError(this.handleError));
@@ -203,7 +204,7 @@ export class CongeService {
     if (!managerId) {
       return throwError(() => new Error('Utilisateur non identifié. Veuillez vous reconnecter.'));
     }
-    
+
     const request = { managerId, commentaire };
     return this.http.patch<Conge>(`${this.apiUrl}/${id}/reject`, request, { headers: this.getHeaders() })
       .pipe(catchError(this.handleError));
@@ -258,7 +259,7 @@ export class CongeService {
    */
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'Une erreur est survenue lors de la communication avec le serveur.';
-    
+
     if (error.error instanceof ErrorEvent) {
       // Erreur côté client
       errorMessage = error.error.message;
@@ -278,7 +279,7 @@ export class CongeService {
         errorMessage = `Erreur ${error.status}: ${error.statusText}`;
       }
     }
-    
+
     console.error('❌ Erreur API:', error);
     return throwError(() => new Error(errorMessage));
   }
