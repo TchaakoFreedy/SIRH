@@ -1,7 +1,6 @@
 <header class="app-header" (click)="$event.stopPropagation()">
 
-  
-  <!-- Bouton hamburger (mobile) -->
+  <!-- ===== Bouton hamburger (mobile) ===== -->
   @if (showMenuButton) {
     <button
       class="menu-btn"
@@ -13,33 +12,36 @@
       <mat-icon aria-hidden="true">menu</mat-icon>
     </button>
   }
-<!-- Logo / Brand -->
-<a
-  class="header-brand"
-  routerLink="/app/dashboard"
-  aria-label="Accueil"
->
-  <div class="logo-icon">
-    <img
-      src="logo.png"
-      alt="Logo de l'application"
-      class="logo-img"
-    />
-  </div>
-</a>
 
-  <!-- Séparateur -->
+  <!-- ===== Logo / Brand ===== -->
+  <a
+    class="header-brand"
+    routerLink="/app/dashboard"
+    aria-label="Accueil"
+  >
+    <div class="logo-icon">
+      <img
+        src="logo.png"
+        alt="Logo de l'application"
+        class="logo-img"
+      />
+    </div>
+  </a>
+
+  <!-- ===== Séparateur ===== -->
   <div class="header-divider" aria-hidden="true"></div>
 
-
-  <!-- Espaceur -->
+  <!-- ===== Espaceur ===== -->
   <div class="spacer"></div>
 
-  <!-- Actions -->
+  <!-- ===== Actions ===== -->
   <div class="header-actions">
 
-    <!-- Notifications -->
+    <!-- ===================================================== -->
+    <!-- Notifications                                          -->
+    <!-- ===================================================== -->
     <div class="action-group">
+
       <button
         class="icon-btn notif-btn"
         type="button"
@@ -241,13 +243,12 @@
 
     </div>
 
-    <!-- Séparateur -->
-    <div
-      class="divider"
-      aria-hidden="true"
-    ></div>
+    <!-- ===== Séparateur ===== -->
+    <div class="divider" aria-hidden="true"></div>
 
-    <!-- Profil Utilisateur -->
+    <!-- ===================================================== -->
+    <!-- Profil Utilisateur                                     -->
+    <!-- ===================================================== -->
     <div class="action-group">
 
       <button

@@ -20,7 +20,7 @@ $info: #3b82f6;
   left: 0;
   right: 0;
 
-  height: 72px;
+  height: 80px;
 
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px) saturate(180%);
@@ -66,11 +66,10 @@ $info: #3b82f6;
 
   flex-shrink: 0;
 
-  // ✅ Largeur raisonnable, cohérente avec le header
-  width: 140px;
-  height: 56px;
+  width: 200px;
+  height: 64px;
 
-  padding: 4px 6px;
+  padding: 4px 8px;
 
   cursor: pointer;
   text-decoration: none;
@@ -99,7 +98,6 @@ $info: #3b82f6;
 }
 
 .logo-icon {
-  // ✅ Prend toute la place disponible dans .header-brand
   width: 100%;
   height: 100%;
 
@@ -113,20 +111,18 @@ $info: #3b82f6;
 
   border-radius: 10px;
 
-  background: rgba($white, 0.98);
+  background: transparent;
 
   overflow: hidden;
 
   transition: transform 0.2s ease;
 
   .logo-img {
-    // ✅ L'image s'adapte à son conteneur sans déborder
     width: 100%;
     height: 100%;
     max-width: 100%;
     max-height: 100%;
 
-    // ✅ Suppression du margin-left: 100px qui décalait l'image
     margin: 0;
 
     display: block;
@@ -134,7 +130,7 @@ $info: #3b82f6;
     object-fit: contain;
     object-position: center;
 
-    padding: 2px;
+    padding: 0;
 
     transition: transform 0.2s ease;
   }
@@ -1081,15 +1077,14 @@ $info: #3b82f6;
 // ===== Responsive =====
 @media (max-width: 1024px) {
   .header-brand {
-    // ✅ Légèrement plus petit sur tablette
-    width: 120px;
-    height: 52px;
+    width: 170px;
+    height: 58px;
   }
 }
 
 @media (max-width: 768px) {
   .app-header {
-    height: 64px;
+    height: 72px;
 
     padding: 0 16px;
 
@@ -1115,11 +1110,10 @@ $info: #3b82f6;
   }
 
   .header-brand {
-    // ✅ Adapter en mobile
-    width: 110px;
-    height: 48px;
+    width: 150px;
+    height: 56px;
 
-    padding: 3px 5px;
+    padding: 3px 6px;
   }
 
   .logo-icon {
@@ -1129,17 +1123,18 @@ $info: #3b82f6;
 
 @media (max-width: 480px) {
   .app-header {
+    height: 64px;
+
     padding: 0 12px;
 
     gap: 6px;
   }
 
   .header-brand {
-    // ✅ Encore plus compact sur très petits écrans
-    width: 90px;
-    height: 42px;
+    width: 130px;
+    height: 50px;
 
-    padding: 2px 4px;
+    padding: 2px 5px;
   }
 
   .logo-icon {
